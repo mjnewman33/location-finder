@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Find Kroger locations by Site ID or Facility Code">
+  <meta name="theme-color" content="#0066cc">
+  <title>Kroger Location Finder</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+</head>
+<body>
+  <header>
+    <h1>Kroger Location Finder</h1>
+  </header>
+  
+  <main>
+    <div id="search-container">
+      <input type="text" id="search-input" placeholder="Enter Site ID or Facility Code">
+      <button id="search-button">Search</button>
+    </div>
+    
+    <div id="result-container">
+      <!-- Results will be displayed here -->
+    </div>
+    
+    <div id="loading" class="hidden">
+      <div class="spinner"></div>
+    </div>
+    
+    <div id="error-message" class="hidden"></div>
+  </main>
+  
+  <footer>
+    <p>Kroger Location Data Tool</p>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+    // Register service worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('Service worker registered'))
+          .catch(err => console.log('Service worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
