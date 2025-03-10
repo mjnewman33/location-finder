@@ -6,6 +6,12 @@
 // Configuration with API endpoint
 const CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbxOuM-BCQqM0uBSgsSvZt7Ky2H57YOyVT0Gz3O5-tolE7e38ypBaT71GOlMvV3-qLCTDg/exec',
+ // Use direct image URLs
+  images: {
+    headerLogo: 'https://lh3.googleusercontent.com/d/1lAI-LC-RXSJPhMyFOYok8bxYRvBit_ye',
+    companyLogo: 'https://lh3.googleusercontent.com/d/1zngYUKdx-lfZ8iNiKg3DvEc_LiO1eIhk',
+    backgroundImage: 'https://lh3.googleusercontent.com/d/1kD-noLuLaR0ke-jm-yl0ahzs_acoyRnx'
+  },
   // Default fallback images in case API is unreachable
   fallbackImages: {
     headerLogo: 'images/kroger-logo.png',
