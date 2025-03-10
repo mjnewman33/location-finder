@@ -1,0 +1,23 @@
+{
+  "name": "Kroger Location Finder",
+  "short_name": "Kroger Finder",
+  "description": "Quickly find Kroger locations by Site ID or Facility Code",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#f9f9f9",
+  "theme_color": "#0059a7",
+  "icons": [
+    {
+      "src": "images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
