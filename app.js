@@ -6,7 +6,7 @@
 // Configuration with API endpoint
 const CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbxOuM-BCQqM0uBSgsSvZt7Ky2H57YOyVT0Gz3O5-tolE7e38ypBaT71GOlMvV3-qLCTDg/exec',
- // Use direct image URLs
+  // Use direct image URLs
   images: {
     headerLogo: 'https://lh3.googleusercontent.com/d/1lAI-LC-RXSJPhMyFOYok8bxYRvBit_ye',
     companyLogo: 'https://lh3.googleusercontent.com/d/1zngYUKdx-lfZ8iNiKg3DvEc_LiO1eIhk',
@@ -30,6 +30,9 @@ let appState = {
 document.addEventListener('DOMContentLoaded', function() {
   // Initialize UI elements
   initializeUI();
+  
+  // Load images directly (don't wait for API)
+  loadImagesDirectly();
   
   // Load configuration from API
   loadAppConfiguration();
@@ -110,18 +113,33 @@ async function loadAppConfiguration() {
  * Apply configuration received from API to the UI
  */
 function applyConfiguration(config) {
+  console.log("Applying configuration:", config);
+  
   // Set images
   if (config.images) {
     if (config.images.headerLogo) {
-      document.getElementById('headerLogo').src = config.images.headerLogo;
+      const headerLogo = document.getElementById('headerLogo');
+      if (headerLogo) {
+        headerLogo.src = config.images.headerLogo;
+        console.log("Set header logo to:", config.images.headerLogo);
+      }
     }
     
     if (config.images.companyLogo) {
-      document.getElementById('companyLogo').src = config.images.companyLogo;
+      const companyLogo = document.getElementById('companyLogo');
+      if (companyLogo) {
+        companyLogo.src = config.images.companyLogo;
+        console.log("Set company logo to:", config.images.companyLogo);
+      }
     }
     
     if (config.images.backgroundImage) {
-      document.getElementById('backgroundImage').style.backgroundImage = `url('${config.images.backgroundImage}')`;
+      // FIXED: Use main-container instead of backgroundImage
+      const container = document.getElementById('main-container');
+      if (container) {
+        container.style.backgroundImage = `url('${config.images.backgroundImage}')`;
+        console.log("Set background image to:", config.images.backgroundImage);
+      }
     }
   }
   
@@ -129,13 +147,20 @@ function applyConfiguration(config) {
   if (config.links) {
     if (config.links.companyWebsite) {
       const companyLink = document.getElementById('companyWebsite');
-      companyLink.href = config.links.companyWebsite;
+      if (companyLink) {
+        companyLink.href = config.links.companyWebsite;
+        companyLink.target = "_blank"; // Open in new tab
+        console.log("Set company website to:", config.links.companyWebsite);
+      }
     }
     
     if (config.links.supportEmail) {
       const supportLink = document.getElementById('supportEmail');
-      supportLink.href = `mailto:${config.links.supportEmail}`;
-      supportLink.textContent = config.links.supportEmail;
+      if (supportLink) {
+        supportLink.href = `mailto:${config.links.supportEmail}`;
+        supportLink.textContent = config.links.supportEmail;
+        console.log("Set support email to:", config.links.supportEmail);
+      }
     }
   }
 }
@@ -144,9 +169,20 @@ function applyConfiguration(config) {
  * Apply fallback configuration when API is unreachable
  */
 function applyFallbackConfiguration() {
-  // Apply fallback images
-  document.getElementById('headerLogo').src = CONFIG.fallbackImages.headerLogo;
-  document.getElementById('companyLogo').src = CONFIG.fallbackImages.companyLogo;
+  console.log("Applying fallback configuration");
+  
+  // Apply fallback images with error handling
+  const headerLogo = document.getElementById('headerLogo');
+  if (headerLogo) {
+    headerLogo.src = CONFIG.fallbackImages.headerLogo;
+    console.log("Set header logo to fallback:", CONFIG.fallbackImages.headerLogo);
+  }
+  
+  const companyLogo = document.getElementById('companyLogo');
+  if (companyLogo) {
+    companyLogo.src = CONFIG.fallbackImages.companyLogo;
+    console.log("Set company logo to fallback:", CONFIG.fallbackImages.companyLogo);
+  }
   
   // Disable features that require API if needed
   const searchBtn = document.getElementById('searchBtn');
@@ -156,6 +192,34 @@ function applyFallbackConfiguration() {
   
   // Show offline notification if needed
   updateOnlineStatus();
+}
+
+/**
+ * Load images directly without waiting for API
+ */
+function loadImagesDirectly() {
+  console.log("Loading images directly");
+  
+  // Set header logo
+  const headerLogo = document.getElementById('headerLogo');
+  if (headerLogo) {
+    headerLogo.src = CONFIG.images.headerLogo;
+    console.log("Directly set header logo");
+  }
+  
+  // Set company logo
+  const companyLogo = document.getElementById('companyLogo');
+  if (companyLogo) {
+    companyLogo.src = CONFIG.images.companyLogo;
+    console.log("Directly set company logo");
+  }
+  
+  // Set background image
+  const container = document.getElementById('main-container');
+  if (container) {
+    container.style.backgroundImage = `url('${CONFIG.images.backgroundImage}')`;
+    console.log("Directly set background image");
+  }
 }
 
 /**
