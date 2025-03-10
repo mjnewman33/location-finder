@@ -113,27 +113,27 @@ function applyConfiguration(config) {
   // Set images
   if (config.images) {
     if (config.images.headerLogo) {
-      document.getElementById('header-logo').src = config.images.headerLogo;
+      document.getElementById('headerLogo').src = config.images.headerLogo;
     }
     
     if (config.images.companyLogo) {
-      document.getElementById('company-logo').src = config.images.companyLogo;
+      document.getElementById('companyLogo').src = config.images.companyLogo;
     }
     
     if (config.images.backgroundImage) {
-      document.getElementById('main-container').style.backgroundImage = `url('${config.images.backgroundImage}')`;
+      document.getElementById('backgroundImage').style.backgroundImage = `url('${config.images.backgroundImage}')`;
     }
   }
   
   // Set links
   if (config.links) {
     if (config.links.companyWebsite) {
-      const companyLink = document.getElementById('company-website-link');
+      const companyLink = document.getElementById('companyWebsite');
       companyLink.href = config.links.companyWebsite;
     }
     
     if (config.links.supportEmail) {
-      const supportLink = document.getElementById('support-email-link');
+      const supportLink = document.getElementById('supportEmail');
       supportLink.href = `mailto:${config.links.supportEmail}`;
       supportLink.textContent = config.links.supportEmail;
     }
@@ -145,8 +145,8 @@ function applyConfiguration(config) {
  */
 function applyFallbackConfiguration() {
   // Apply fallback images
-  document.getElementById('header-logo').src = CONFIG.fallbackImages.headerLogo;
-  document.getElementById('company-logo').src = CONFIG.fallbackImages.companyLogo;
+  document.getElementById('headerLogo').src = CONFIG.fallbackImages.headerLogo;
+  document.getElementById('companyLogo').src = CONFIG.fallbackImages.companyLogo;
   
   // Disable features that require API if needed
   const searchBtn = document.getElementById('searchBtn');
