@@ -3,7 +3,7 @@
  * Focused on performance enhancement without offline functionality
  */
 
-const CACHE_NAME = 'kroger-finder-cache-v1';
+const CACHE_NAME = 'kroger-finder-cache-v2';
 
 // Assets to cache for performance improvement
 const STATIC_ASSETS = [
