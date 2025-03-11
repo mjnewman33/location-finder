@@ -242,8 +242,8 @@ body {
 
 .help-link {
   position: absolute;
-  left: 15px;
-  bottom: 10px;
+  left: 20px;
+  bottom: 15px;
   color: rgba(255,255,255,0.7);
   font-size: calc(12px + 0.2vmin);
   text-decoration: none;
