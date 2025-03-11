@@ -2,8 +2,10 @@
   "name": "Kroger Location Finder",
   "short_name": "Kroger Finder",
   "description": "Quickly find Kroger locations by Site ID or Facility Code",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f9f9f9",
   "theme_color": "#0059a7",
   "icons": [
