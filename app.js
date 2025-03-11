@@ -329,14 +329,26 @@ function handleSearchResult(result) {
     resultArea.innerHTML = `
       <h2>Location Found</h2>
       <div class="location-info">
-        <span class="info-label">Address:</span>
-        <div class="info-value">${result.address}</div>
+        <div class="info-label">Site:</div>
+        <div class="info-value">${result.siteId}</div>
         
-        <span class="info-label">Phone:</span>
+        <div class="info-label">Facility Code:</div>
+        <div class="info-value">${result.facilityCode}</div>
+        
+        <div class="info-label">Address:</div>
+        <div class="info-value address-block">
+          <div>${result.street}</div>
+          <div>${result.city}, ${result.state} ${result.zip}</div>
+        </div>
+        
+        <div class="info-label">Phone:</div>
         <div class="info-value">${result.phone}</div>
       </div>
-      <button onclick="getDirections('${result.address.replace(/'/g, "\\'")}')" class="directions-button">Get Directions</button>
+      <button onclick="getDirections('${result.street.replace(/'/g, "\\'")} ${result.city.replace(/'/g, "\\'")} ${result.state} ${result.zip}')" class="directions-button">Get Directions</button>
     `;
+    
+    // Clear the search input
+    document.getElementById('searchInput').value = '';
   }
 }
 
