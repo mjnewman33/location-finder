@@ -158,7 +158,7 @@ function applyConfiguration(config) {
       const supportLink = document.getElementById('supportEmail');
       if (supportLink) {
         supportLink.href = `mailto:${config.links.supportEmail}`;
-        supportLink.textContent = config.links.supportEmail;
+        // supportLink.textContent = config.links.supportEmail;
         console.log("Set support email to:", config.links.supportEmail);
       }
     }
