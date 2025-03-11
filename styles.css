@@ -242,10 +242,11 @@ body {
 
 .help-link {
   position: absolute;
-  left: 20px;
-  bottom: 15px;
+  left: 28px;
+  bottom: 20px;
   color: rgba(255,255,255,0.7);
-  font-size: calc(12px + 0.2vmin);
+  font-size: calc(14px + 0.2vmin);
+  font-weight: bold;
   text-decoration: none;
   line-height: 1;
   display: inline;
