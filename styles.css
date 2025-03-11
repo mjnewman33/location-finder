@@ -337,6 +337,15 @@ body {
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
+/* Address block formatting */
+.address-block {
+  line-height: 1.5;
+}
+
+.address-block div {
+  margin-bottom: 0.3vh;
+}
+
 /* Ensure proper sizing on larger screens */
 @media (min-width: 768px) {
   body {
