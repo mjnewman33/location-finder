@@ -390,8 +390,9 @@ function getDirections(address) {
   else if (/android/i.test(userAgent)) {
     window.location.href = `https://maps.google.com/?q=${encodedAddress}`;
   } 
-  // Default fallback for all other platforms
+// Desktop browsers - always use Google Maps web URL
   else {
-    window.location.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+    // Using window.open with _blank ensures it works in all desktop browsers
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
   }
 }
