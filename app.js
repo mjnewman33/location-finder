@@ -376,6 +376,7 @@ function showOfflineSearchError() {
  * Open maps app for directions across different platforms
  */
 function getDirections(address) {
+  document.getElementById('resultArea').classList.add('hidden');
   const encodedAddress = encodeURIComponent(address);
   
   // Detect platform
