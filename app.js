@@ -41,6 +41,71 @@ document.addEventListener('DOMContentLoaded', function() {
   setupConnectivityDetection();
 });
 
+// Variable to store the deferred prompt event
+let deferredPrompt;
+
+// Listen for the beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('beforeinstallprompt event fired');
+  
+  // Prevent the mini-infobar from appearing on mobile
+  e.preventDefault();
+  
+  // Stash the event so it can be triggered later
+  deferredPrompt = e;
+  
+  // Show the install button
+  const installContainer = document.getElementById('installContainer');
+  if (installContainer) {
+    installContainer.classList.remove('hidden');
+  }
+});
+
+// Initialize install button functionality
+function initializeInstallButton() {
+  const installButton = document.getElementById('installButton');
+  
+  if (installButton) {
+    installButton.addEventListener('click', async () => {
+      console.log('Install button clicked');
+      
+      // Hide the install button
+      const installContainer = document.getElementById('installContainer');
+      if (installContainer) {
+        installContainer.classList.add('hidden');
+      }
+      
+      // Show the install prompt
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to install prompt: ${outcome}`);
+        
+        // We no longer need the prompt. Clear it up
+        deferredPrompt = null;
+      } else {
+        console.log('No deferred prompt available');
+      }
+    });
+  }
+}
+
+// Listen for the appinstalled event
+window.addEventListener('appinstalled', (e) => {
+  console.log('App was installed successfully');
+  
+  // Hide the install button if it's still visible
+  const installContainer = document.getElementById('installContainer');
+  if (installContainer) {
+    installContainer.classList.add('hidden');
+  }
+  
+  // Optionally, you could show a thank you message
+  // or track installation in analytics
+});
+
 /**
  * Initialize UI elements and event listeners
  */
