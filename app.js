@@ -141,6 +141,9 @@ function initializeUI() {
       helpModal.style.display = 'none';
     }
   });
+
+  // Initialize install button
+  initializeInstallButton();  // <-- ADD THIS LINE HERE
 }
 
 /**
