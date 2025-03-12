@@ -367,6 +367,118 @@ body {
   margin-bottom: 0.3vh;
 }
 
+/* Email Registration styles */
+.email-registration-container {
+  width: 100%;
+  background-color: white;
+  border: 2px solid var(--kroger-blue);
+  border-radius: 8px;
+  padding: 2vh 3vw;
+  margin-bottom: 2vh;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.email-registration-container h3 {
+  color: var(--kroger-blue);
+  margin-bottom: 1vh;
+  font-size: calc(18px + 0.3vmin);
+}
+
+.email-registration-container p {
+  color: var(--text-light);
+  margin-bottom: 1.5vh;
+  font-size: calc(14px + 0.2vmin);
+}
+
+.email-registration-form {
+  width: 100%;
+}
+
+.email-input {
+  width: 100%;
+  height: 6vh;
+  min-height: 40px;
+  max-height: 60px;
+  padding: 0 3vw;
+  font-size: inherit;
+  border: 2px solid var(--kroger-blue);
+  border-radius: 5px;
+  outline: none;
+  transition: all 0.3s;
+  margin-bottom: 1.5vh;
+}
+
+.email-input:focus {
+  border-color: var(--kroger-red);
+  box-shadow: 0 0 5px rgba(239, 62, 66, 0.3);
+}
+
+.register-button {
+  width: 100%;
+  height: 6vh;
+  min-height: 40px;
+  max-height: 60px;
+  background-color: var(--kroger-blue);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.register-button:hover {
+  background-color: #004a8c;
+}
+
+.registration-message {
+  margin-top: 1.5vh;
+  padding: 1vh;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.registration-message.success {
+  background-color: #e6f7e6;
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+}
+
+.registration-message.error {
+  background-color: #fdecea;
+  color: #c62828;
+  border: 1px solid #c62828;
+}
+
+/* Access Denied styles */
+.access-denied-container {
+  width: 100%;
+  padding: 2vh 3vw;
+  margin-bottom: 2vh;
+}
+
+.access-denied-message {
+  background-color: #fdecea;
+  border: 2px solid #c62828;
+  border-radius: 8px;
+  padding: 3vh 3vw;
+  text-align: center;
+}
+
+.access-denied-message h3 {
+  color: #c62828;
+  margin-bottom: 1vh;
+  font-size: calc(20px + 0.3vmin);
+}
+
+.access-denied-message p {
+  color: var(--text-dark);
+  font-size: calc(14px + 0.2vmin);
+}
+
 /* Ensure proper sizing on larger screens */
 @media (min-width: 768px) {
   body {
