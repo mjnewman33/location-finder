@@ -203,11 +203,26 @@ function showRegistrationMessage(message, type) {
     messageDiv.classList.remove('hidden', 'success', 'error');
     messageDiv.classList.add(type);
     
-    // Hide message after 5 seconds on success
+    // If registration was successful, show the help modal with donation info
     if (type === 'success') {
       setTimeout(() => {
         messageDiv.classList.add('hidden');
-      }, 5000);
+        
+        // Show help modal with donation info and navigation hint
+        const helpModal = document.getElementById('helpModal');
+        if (helpModal) {
+          // Show the post-registration navigation hint
+          const navigationHint = document.getElementById('postRegistrationHint');
+          if (navigationHint) {
+            navigationHint.classList.remove('hidden');
+          }
+          
+          helpModal.style.display = 'flex';
+          
+          // Track that this is a post-registration modal opening
+          helpModal.dataset.openedAfterRegistration = 'true';
+        }
+      }, 3000);
     }
   }
 }
@@ -342,21 +357,49 @@ function initializeUI() {
   });
   
   // Help modal functionality
-  helpLink.addEventListener('click', function(e) {
-    e.preventDefault();
-    helpModal.style.display = 'flex';
-  });
+helpLink.addEventListener('click', function(e) {
+  e.preventDefault();
   
-  closeModal.addEventListener('click', function() {
+  // Hide the navigation hint for normal help modal openings
+  const navigationHint = document.getElementById('postRegistrationHint');
+  if (navigationHint) {
+    navigationHint.classList.add('hidden');
+  }
+  
+  // Reset the post-registration flag
+  helpModal.dataset.openedAfterRegistration = 'false';
+  
+  helpModal.style.display = 'flex';
+});
+
+closeModal.addEventListener('click', function() {
+  helpModal.style.display = 'none';
+  
+  // If this was opened after registration, we're done with that special state
+  helpModal.dataset.openedAfterRegistration = 'false';
+  
+  // Hide the navigation hint when closing
+  const navigationHint = document.getElementById('postRegistrationHint');
+  if (navigationHint) {
+    navigationHint.classList.add('hidden');
+  }
+});
+
+// Close modal when clicking outside of it
+window.addEventListener('click', function(e) {
+  if (e.target === helpModal) {
     helpModal.style.display = 'none';
-  });
-  
-  // Close modal when clicking outside of it
-  window.addEventListener('click', function(e) {
-    if (e.target === helpModal) {
-      helpModal.style.display = 'none';
+    
+    // Reset post-registration state
+    helpModal.dataset.openedAfterRegistration = 'false';
+    
+    // Hide the navigation hint when closing
+    const navigationHint = document.getElementById('postRegistrationHint');
+    if (navigationHint) {
+      navigationHint.classList.add('hidden');
     }
-  });
+  }
+});
 
   // Initialize install button
   initializeInstallButton();  // <-- ADD THIS LINE HERE
