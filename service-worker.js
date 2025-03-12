@@ -3,7 +3,7 @@
  * Optimized for online-only functionality with offline notification
  */
 
-const CACHE_NAME = 'kroger-finder-cache-v6';
+const CACHE_NAME = 'kroger-finder-cache-v7';
 
 // Cache only essential UI assets (no data)
 const STATIC_ASSETS = [
@@ -12,8 +12,6 @@ const STATIC_ASSETS = [
   './styles.css',
   './app.js',
   './manifest.json',
-  //'./images/kroger-logo.png',
-  //'./images/company-logo.png',
   './images/KLA512.png',
   './images/KLA192.png',
   './images/KLA180.png',
