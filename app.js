@@ -134,10 +134,13 @@ function initializeEmailRegistration() {
           throw new Error('You are currently offline. Please try again when connected.');
         }
         
-        // Send registration to API
-        const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${encodeURIComponent(email)}`, {
-          method: 'GET'
-        });
+        // Get device type
+const deviceType = detectDeviceType();
+
+// Send registration to API with device type
+const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${encodeURIComponent(email)}&deviceType=${encodeURIComponent(deviceType)}`, {
+  method: 'GET'
+});
         
         if (!response.ok) {
           throw new Error('Registration failed. Please try again later.');
@@ -236,6 +239,46 @@ function isValidEmail(email) {
 }
 
 /**
+ * Detect user's device type
+ * @returns {string} The detected device type
+ */
+function detectDeviceType() {
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  
+  // Detect mobile devices
+  if (/android/i.test(userAgent)) {
+    return "Android";
+  }
+  
+  if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+    return "iOS";
+  }
+  
+  // Detect specific browsers on desktop
+  if (/Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor)) {
+    return "Desktop - Chrome";
+  }
+  
+  if (/Firefox/.test(userAgent)) {
+    return "Desktop - Firefox";
+  }
+  
+  if (/Safari/.test(userAgent) && !/Chrome/.test(userAgent)) {
+    return "Desktop - Safari";
+  }
+  
+  if (/Edg/.test(userAgent)) {
+    return "Desktop - Edge";
+  }
+  
+  if (/Trident/.test(userAgent) || /MSIE/.test(userAgent)) {
+    return "Desktop - Internet Explorer";
+  }
+  
+  // Fallback for other desktop browsers
+  return "Desktop - Other";
+}
+/**
  * Save user data to localStorage
  */
 function saveUserData() {
@@ -270,7 +313,15 @@ async function validateUserAccess() {
     const response = await fetch(`${CONFIG.apiUrl}?action=validateAccess&email=${encodeURIComponent(appState.user.email)}&token=${encodeURIComponent(appState.user.accessToken)}`);
     
     if (!response.ok) {
-      throw new Error('Validation failed');
+      console.log('Validation failed - showing registration form again');
+      
+      // Show registration form again
+      const emailContainer = document.getElementById('emailRegistrationContainer');
+      if (emailContainer) {
+        emailContainer.style.display = 'block';
+      }
+      
+      return true; // Allow access so they can re-register
     }
     
     const result = await response.json();
@@ -280,6 +331,19 @@ async function validateUserAccess() {
     
     // Save updated status
     saveUserData();
+    
+    // If access denied but it's a valid email, show registration form again
+    if (!appState.user.isAuthorized && result.validEmail === true) {
+      console.log('Token invalid but email valid - showing registration form');
+      
+      // Show registration form again
+      const emailContainer = document.getElementById('emailRegistrationContainer');
+      if (emailContainer) {
+        emailContainer.style.display = 'block';
+      }
+      
+      return true; // Allow access so they can re-register
+    }
     
     // If access denied, show access denied message
     if (!appState.user.isAuthorized) {
@@ -291,35 +355,14 @@ async function validateUserAccess() {
     
   } catch (error) {
     console.error('Access validation error:', error);
-    return true; // Allow access on validation error (fail open for better UX)
-  }
-}
-
-/**
- * Show access denied message and disable app functionality
- */
-function showAccessDenied() {
-  // Hide main app content
-  const contentWrapper = document.querySelector('.content-wrapper');
-  if (contentWrapper) {
-    contentWrapper.style.display = 'none';
-  }
-  
-  // Show access denied message
-  const accessDeniedContainer = document.getElementById('accessDeniedContainer');
-  if (accessDeniedContainer) {
-    accessDeniedContainer.classList.remove('hidden');
-  }
-  
-  // Disable search functionality
-  const searchBtn = document.getElementById('searchBtn');
-  if (searchBtn) {
-    searchBtn.disabled = true;
-  }
-  
-  const searchInput = document.getElementById('searchInput');
-  if (searchInput) {
-    searchInput.disabled = true;
+    
+    // On error, show registration form again
+    const emailContainer = document.getElementById('emailRegistrationContainer');
+    if (emailContainer) {
+      emailContainer.style.display = 'block';
+    }
+    
+    return true; // Allow access so they can re-register
   }
 }
 
