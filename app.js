@@ -23,22 +23,33 @@ const CONFIG = {
 let appState = {
   isOnline: navigator.onLine,
   isLoading: false,
-  appConfig: null // Will be populated from API
+  appConfig: null, // Will be populated from API
+  user: {
+    email: null,
+    accessToken: null,
+    isAuthorized: null // null = not checked, true/false = checked
+  }
 };
 
 // Initialize the app when the document is fully loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
   // Initialize UI elements
   initializeUI();
   
   // Load images directly (don't wait for API)
   loadImagesDirectly();
   
-  // Load configuration from API
-  loadAppConfiguration();
+  // Validate user access
+  const hasAccess = await validateUserAccess();
   
-  // Set up online/offline detection
-  setupConnectivityDetection();
+  // Only proceed with full initialization if user has access
+  if (hasAccess) {
+    // Load configuration from API
+    loadAppConfiguration();
+    
+    // Set up online/offline detection
+    setupConnectivityDetection();
+  }
 });
 
 // Variable to store the deferred prompt event
@@ -89,6 +100,211 @@ function initializeInstallButton() {
         console.log('No deferred prompt available');
       }
     });
+  }
+}
+
+/**
+ * Initialize email registration functionality
+ */
+function initializeEmailRegistration() {
+  const emailForm = document.getElementById('emailRegistrationForm');
+  const messageDiv = document.getElementById('registrationMessage');
+  
+  if (emailForm) {
+    emailForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const emailInput = document.getElementById('emailInput');
+      const email = emailInput.value.trim();
+      
+      // Basic validation
+      if (!email || !isValidEmail(email)) {
+        showRegistrationMessage('Please enter a valid email address', 'error');
+        return;
+      }
+      
+      // Disable form while processing
+      const registerButton = document.getElementById('registerButton');
+      registerButton.disabled = true;
+      registerButton.textContent = 'Registering...';
+      
+      try {
+        // Check if we're online
+        if (!navigator.onLine) {
+          throw new Error('You are currently offline. Please try again when connected.');
+        }
+        
+        // Send registration to API
+        const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${encodeURIComponent(email)}`, {
+          method: 'GET'
+        });
+        
+        if (!response.ok) {
+          throw new Error('Registration failed. Please try again later.');
+        }
+        
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        // Success - store user data
+        appState.user.email = email;
+        appState.user.accessToken = result.accessToken;
+        appState.user.isAuthorized = true;
+        
+        // Save user data to localStorage
+        saveUserData();
+        
+        // Show success message
+        showRegistrationMessage('Registration successful! Thank you for subscribing.', 'success');
+        emailInput.value = '';
+        
+        // Hide registration form after successful registration
+        setTimeout(() => {
+          const emailContainer = document.getElementById('emailRegistrationContainer');
+          if (emailContainer) {
+            emailContainer.style.display = 'none';
+          }
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Registration error:', error);
+        showRegistrationMessage(error.message || 'Registration failed. Please try again.', 'error');
+      } finally {
+        // Re-enable form
+        registerButton.disabled = false;
+        registerButton.textContent = 'Register';
+      }
+    });
+  }
+  
+  // Check if user is already registered
+  const savedUserData = loadUserData();
+  if (savedUserData && savedUserData.email) {
+    appState.user = savedUserData;
+    
+    // Hide registration form if user is already registered
+    const emailContainer = document.getElementById('emailRegistrationContainer');
+    if (emailContainer) {
+      emailContainer.style.display = 'none';
+    }
+  }
+}
+
+/**
+ * Display registration status message
+ */
+function showRegistrationMessage(message, type) {
+  const messageDiv = document.getElementById('registrationMessage');
+  if (messageDiv) {
+    messageDiv.textContent = message;
+    messageDiv.classList.remove('hidden', 'success', 'error');
+    messageDiv.classList.add(type);
+    
+    // Hide message after 5 seconds on success
+    if (type === 'success') {
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 5000);
+    }
+  }
+}
+
+/**
+ * Validate email format
+ */
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Save user data to localStorage
+ */
+function saveUserData() {
+  localStorage.setItem('krogerFinderUser', JSON.stringify(appState.user));
+}
+
+/**
+ * Load user data from localStorage
+ */
+function loadUserData() {
+  const userData = localStorage.getItem('krogerFinderUser');
+  return userData ? JSON.parse(userData) : null;
+}
+
+/**
+ * Check if user has access to the application
+ * This is called when the app starts
+ */
+async function validateUserAccess() {
+  // Skip if no user data is stored
+  if (!appState.user || !appState.user.email || !appState.user.accessToken) {
+    return true; // Allow access if not registered (they'll see registration form)
+  }
+  
+  // Skip validation if offline
+  if (!navigator.onLine) {
+    return true; // Allow access when offline
+  }
+  
+  try {
+    // Send validation request to API
+    const response = await fetch(`${CONFIG.apiUrl}?action=validateAccess&email=${encodeURIComponent(appState.user.email)}&token=${encodeURIComponent(appState.user.accessToken)}`);
+    
+    if (!response.ok) {
+      throw new Error('Validation failed');
+    }
+    
+    const result = await response.json();
+    
+    // Update user authorization status
+    appState.user.isAuthorized = result.hasAccess === true;
+    
+    // Save updated status
+    saveUserData();
+    
+    // If access denied, show access denied message
+    if (!appState.user.isAuthorized) {
+      showAccessDenied();
+      return false;
+    }
+    
+    return appState.user.isAuthorized;
+    
+  } catch (error) {
+    console.error('Access validation error:', error);
+    return true; // Allow access on validation error (fail open for better UX)
+  }
+}
+
+/**
+ * Show access denied message and disable app functionality
+ */
+function showAccessDenied() {
+  // Hide main app content
+  const contentWrapper = document.querySelector('.content-wrapper');
+  if (contentWrapper) {
+    contentWrapper.style.display = 'none';
+  }
+  
+  // Show access denied message
+  const accessDeniedContainer = document.getElementById('accessDeniedContainer');
+  if (accessDeniedContainer) {
+    accessDeniedContainer.classList.remove('hidden');
+  }
+  
+  // Disable search functionality
+  const searchBtn = document.getElementById('searchBtn');
+  if (searchBtn) {
+    searchBtn.disabled = true;
+  }
+  
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.disabled = true;
   }
 }
 
@@ -144,6 +360,9 @@ function initializeUI() {
 
   // Initialize install button
   initializeInstallButton();  // <-- ADD THIS LINE HERE
+
+  // Initialize email registration
+  initializeEmailRegistration();
 }
 
 /**
