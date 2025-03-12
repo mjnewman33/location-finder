@@ -11,11 +11,6 @@ const CONFIG = {
     headerLogo: 'https://lh3.googleusercontent.com/d/1lAI-LC-RXSJPhMyFOYok8bxYRvBit_ye',
     companyLogo: 'https://lh3.googleusercontent.com/d/1zngYUKdx-lfZ8iNiKg3DvEc_LiO1eIhk',
     backgroundImage: 'https://lh3.googleusercontent.com/d/1g77QEpWUMPhrY6OXazm1Us5SuQo-V--8'
-  },
-  // Default fallback images in case API is unreachable
-  fallbackImages: {
-    headerLogo: 'images/kroger-logo.png',
-    companyLogo: 'images/company-logo.png'
   }
 };
 
