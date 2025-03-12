@@ -30,6 +30,31 @@
         <button id="searchBtn" class="search-button">Search</button>
       </div>
 
+      <!-- Email Registration Container -->
+<div id="emailRegistrationContainer" class="email-registration-container">
+  <h3>Stay Updated</h3>
+  <p>Register to receive updates and notifications about Kroger locations.</p>
+  <form id="emailRegistrationForm" class="email-registration-form">
+    <input 
+      type="email" 
+      id="emailInput" 
+      class="email-input" 
+      placeholder="Enter your email address" 
+      required
+    >
+    <button type="submit" id="registerButton" class="register-button">Register</button>
+  </form>
+  <div id="registrationMessage" class="registration-message hidden"></div>
+</div>
+
+<!-- Access Denied Message (initially hidden) -->
+<div id="accessDeniedContainer" class="access-denied-container hidden">
+  <div class="access-denied-message">
+    <h3>Access Restricted</h3>
+    <p>Your access to this application has been revoked. If you believe this is an error, please contact support.</p>
+  </div>
+</div>
+
       <!-- Installation prompt button (initially hidden) -->
 <div id="installContainer" class="install-container hidden">
   <button id="installButton" class="install-button">Install App</button>
