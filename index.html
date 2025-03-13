@@ -70,14 +70,16 @@
     </div>
   </div>
   
-  <!-- Footer with company logo and help link -->
-  <footer class="footer">
+ <!-- Footer with company logo and help link -->
+<footer class="footer">
   <!-- Add href attribute to make it a proper link -->
   <a id="companyWebsite" href="#" target="_blank">
     <img id="companyLogo" alt="Company Logo" class="company-logo">
   </a>
   <a href="#" id="helpLink" class="help-link">Help</a>
-</footer> 
+  <!-- Add Install App link (will be conditionally shown via JavaScript) -->
+  <a href="#" id="installLink" class="install-link hidden">Install App</a>
+</footer>
   
   <!-- Help Modal -->
   <div id="helpModal" class="modal">
@@ -105,6 +107,32 @@
 </div>
     </div>
   </div>
+
+  <!-- Install Modal -->
+<div id="installModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Install This App</h2>
+      <button id="closeInstallModal" class="close-button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <h3>For the best experience, install this app on your device:</h3>
+      
+      <div class="install-instructions">
+        <h4>Chrome and Android Users:</h4>
+        <p>You should see an "Install App" button at the top of the screen. If not visible, click the three-dot menu in your browser and select "Install App" or "Add to Home Screen."</p>
+        
+        <h4>iOS Users (iPhone/iPad):</h4>
+        <p>1. Tap the Share button (square with up arrow).</p>
+        <p>2. Scroll down in the share menu</p>
+        <p>3. Tap "Add to Home Screen"</p>
+        <p>4. Confirm by tapping "Add" in the upper right</p>
+      </div>
+      
+      <p class="install-note">Installing the app provides faster access and a full-screen experience without browser controls.</p>
+    </div>
+  </div>
+</div>
   
   <!-- Offline notification banner -->
   <div id="offline-notification" class="offline-notification">You are currently offline</div>
