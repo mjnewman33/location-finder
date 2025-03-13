@@ -879,7 +879,7 @@ function handleSearchResult(result) {
         </div>
         
         <div class="info-label">Phone:</div>
-        <div class="info-value">${result.phone}</div>
+       <div class="info-value"><a href="tel:${result.phone.replace(/[^0-9]/g, '')}">${result.phone}</a></div>
       </div>
       <button onclick="getDirections('${result.street.replace(/'/g, "\\'")} ${result.city.replace(/'/g, "\\'")} ${result.state} ${result.zip}')" class="directions-button">Get Directions</button>
     `;
