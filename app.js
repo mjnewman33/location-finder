@@ -31,6 +31,9 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Initialize UI elements
   initializeUI();
   
+  // Force CSS refresh if service worker is available
+  refreshCSS();
+  
   // Load images directly (don't wait for API)
   loadImagesDirectly();
   
@@ -46,6 +49,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupConnectivityDetection();
   }
 });
+
+/**
+ * Force refresh of CSS by adding timestamp parameter
+ */
+function refreshCSS() {
+  const styleSheets = document.querySelectorAll('link[rel="stylesheet"]');
+  if (styleSheets.length > 0) {
+    styleSheets.forEach(link => {
+      const url = new URL(link.href);
+      url.searchParams.set('v', Date.now());
+      link.href = url.toString();
+    });
+    console.log('CSS refreshed with timestamp parameter');
+  }
+}
 
 // Variable to store the deferred prompt event
 let deferredPrompt;
@@ -677,12 +695,19 @@ function setupConnectivityDetection() {
  * Handle changes in online/offline status
  */
 function handleOnlineStatusChange() {
+  const wasOffline = !appState.isOnline;
   appState.isOnline = navigator.onLine;
   updateOnlineStatus();
   
-  // If coming back online, try to reload config
-  if (appState.isOnline && !appState.appConfig) {
-    loadAppConfiguration();
+  // If coming back online after being offline, refresh CSS and reload config
+  if (appState.isOnline && wasOffline) {
+    console.log('Coming back online - refreshing CSS');
+    refreshCSS();
+    
+    // Also reload app configuration
+    if (!appState.appConfig) {
+      loadAppConfiguration();
+    }
   }
 }
 
