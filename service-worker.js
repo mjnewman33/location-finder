@@ -1,7 +1,6 @@
 /**
  * Kroger Location Finder PWA - Service Worker
  * Optimized for online-only functionality with offline notification
- * Added cache busting for CSS updates
  */
 
 const CACHE_NAME = 'kroger-finder-cache-v11'; // Incremented version number
