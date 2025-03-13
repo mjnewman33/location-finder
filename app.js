@@ -107,7 +107,7 @@ function initializeInstallButton() {
         const { outcome } = await deferredPrompt.userChoice;
         console.log(`User response to install prompt: ${outcome}`);
         
-        // We no longer need the prompt. Clear it up
+      
         deferredPrompt = null;
       } else {
         console.log('No deferred prompt available');
@@ -231,7 +231,7 @@ function initializeEmailRegistration() {
           throw new Error(result.error);
         }
         
-        // Check if the registration was verified in the spreadsheet
+        // Check if the registration was verified
         if (result.verified === false) {
           console.warn('Registration could not be verified in the database');
           throw new Error('Your registration could not be confirmed. Please try again.');
@@ -487,7 +487,7 @@ function showAccessDenied() {
   // Show access denied message
   const accessDenied = document.getElementById('access-denied');
   if (!accessDenied) {
-    // Create access denied element if it doesn't exist
+    // Create access denied element 
     const deniedDiv = document.createElement('div');
     deniedDiv.id = 'access-denied';
     deniedDiv.className = 'access-denied';
@@ -664,7 +664,7 @@ function applyConfiguration(config) {
     }
     
     if (config.images.backgroundImage) {
-      // FIXED: Use main-container instead of backgroundImage
+      // Use main-container instead of backgroundImage
       const container = document.getElementById('main-container');
       if (container) {
         container.style.backgroundImage = `url('${config.images.backgroundImage}')`;
@@ -929,7 +929,7 @@ function getDirections(address) {
   } 
   // Desktop browsers - always use Google Maps web URL
   else {
-    // Using window.open with _blank ensures it works in all desktop browsers
+    // window.open with _blank works in all desktop browsers
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
   }
 }
