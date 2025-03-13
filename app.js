@@ -130,12 +130,12 @@ function initializeEmailRegistration() {
         }
         
         // Get device type
-const deviceType = detectDeviceType();
+        const deviceType = detectDeviceType();
 
-// Send registration to API with device type
-const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${encodeURIComponent(email)}&deviceType=${encodeURIComponent(deviceType)}`, {
-  method: 'GET'
-});
+        // Send registration to API with device type
+        const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${encodeURIComponent(email)}&deviceType=${encodeURIComponent(deviceType)}`, {
+          method: 'GET'
+        });
         
         if (!response.ok) {
           throw new Error('Registration failed. Please try again later.');
@@ -145,6 +145,12 @@ const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${enco
         
         if (result.error) {
           throw new Error(result.error);
+        }
+        
+        // Check if the registration was verified in the spreadsheet
+        if (result.verified === false) {
+          console.warn('Registration could not be verified in the database');
+          throw new Error('Your registration could not be confirmed. Please try again.');
         }
         
         // Success - store user data
@@ -321,6 +327,29 @@ async function validateUserAccess() {
     
     const result = await response.json();
     
+    // Check if email was found in the database
+    if (result.validEmail === false) {
+      console.log('Email not found in database - showing registration form');
+      
+      // Clear the invalid user data
+      appState.user = {
+        email: null,
+        accessToken: null,
+        isAuthorized: null
+      };
+      
+      // Save the cleared data
+      saveUserData();
+      
+      // Show registration form again
+      const emailContainer = document.getElementById('emailRegistrationContainer');
+      if (emailContainer) {
+        emailContainer.style.display = 'block';
+      }
+      
+      return true; // Allow access so they can register properly
+    }
+    
     // Update user authorization status
     appState.user.isAuthorized = result.hasAccess === true;
     
@@ -361,6 +390,49 @@ async function validateUserAccess() {
   }
 }
 
+/**
+ * Show access denied message
+ */
+function showAccessDenied() {
+  // Hide all main content
+  const mainContent = document.getElementById('main-content');
+  if (mainContent) {
+    mainContent.style.display = 'none';
+  }
+  
+  // Show access denied message
+  const accessDenied = document.getElementById('access-denied');
+  if (!accessDenied) {
+    // Create access denied element if it doesn't exist
+    const deniedDiv = document.createElement('div');
+    deniedDiv.id = 'access-denied';
+    deniedDiv.className = 'access-denied';
+    deniedDiv.innerHTML = `
+      <h2>Access Denied</h2>
+      <p>Your access to this application has been revoked.</p>
+      <p>Please contact support if you believe this is an error.</p>
+      <button id="reregisterButton" class="btn">Register Again</button>
+    `;
+    document.body.appendChild(deniedDiv);
+    
+    // Add event listener to re-register button
+    document.getElementById('reregisterButton').addEventListener('click', function() {
+      // Clear user data
+      appState.user = {
+        email: null,
+        accessToken: null,
+        isAuthorized: null
+      };
+      saveUserData();
+      
+      // Reload the page
+      window.location.reload();
+    });
+  } else {
+    accessDenied.style.display = 'block';
+  }
+}
+
 // Listen for the appinstalled event
 window.addEventListener('appinstalled', (e) => {
   console.log('App was installed successfully');
@@ -395,40 +467,25 @@ function initializeUI() {
   });
   
   // Help modal functionality
-helpLink.addEventListener('click', function(e) {
-  e.preventDefault();
-  
-  // Hide the navigation hint for normal help modal openings
-  const navigationHint = document.getElementById('postRegistrationHint');
-  if (navigationHint) {
-    navigationHint.classList.add('hidden');
-  }
-  
-  // Reset the post-registration flag
-  helpModal.dataset.openedAfterRegistration = 'false';
-  
-  helpModal.style.display = 'flex';
-});
+  helpLink.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    // Hide the navigation hint for normal help modal openings
+    const navigationHint = document.getElementById('postRegistrationHint');
+    if (navigationHint) {
+      navigationHint.classList.add('hidden');
+    }
+    
+    // Reset the post-registration flag
+    helpModal.dataset.openedAfterRegistration = 'false';
+    
+    helpModal.style.display = 'flex';
+  });
 
-closeModal.addEventListener('click', function() {
-  helpModal.style.display = 'none';
-  
-  // If this was opened after registration, we're done with that special state
-  helpModal.dataset.openedAfterRegistration = 'false';
-  
-  // Hide the navigation hint when closing
-  const navigationHint = document.getElementById('postRegistrationHint');
-  if (navigationHint) {
-    navigationHint.classList.add('hidden');
-  }
-});
-
-// Close modal when clicking outside of it
-window.addEventListener('click', function(e) {
-  if (e.target === helpModal) {
+  closeModal.addEventListener('click', function() {
     helpModal.style.display = 'none';
     
-    // Reset post-registration state
+    // If this was opened after registration, we're done with that special state
     helpModal.dataset.openedAfterRegistration = 'false';
     
     // Hide the navigation hint when closing
@@ -436,11 +493,26 @@ window.addEventListener('click', function(e) {
     if (navigationHint) {
       navigationHint.classList.add('hidden');
     }
-  }
-});
+  });
+
+  // Close modal when clicking outside of it
+  window.addEventListener('click', function(e) {
+    if (e.target === helpModal) {
+      helpModal.style.display = 'none';
+      
+      // Reset post-registration state
+      helpModal.dataset.openedAfterRegistration = 'false';
+      
+      // Hide the navigation hint when closing
+      const navigationHint = document.getElementById('postRegistrationHint');
+      if (navigationHint) {
+        navigationHint.classList.add('hidden');
+      }
+    }
+  });
 
   // Initialize install button
-  initializeInstallButton();  // <-- ADD THIS LINE HERE
+  initializeInstallButton();
 
   // Initialize email registration
   initializeEmailRegistration();
@@ -758,7 +830,7 @@ function getDirections(address) {
   else if (/android/i.test(userAgent)) {
     window.location.href = `https://maps.google.com/?q=${encodedAddress}`;
   } 
-// Desktop browsers - always use Google Maps web URL
+  // Desktop browsers - always use Google Maps web URL
   else {
     // Using window.open with _blank ensures it works in all desktop browsers
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
