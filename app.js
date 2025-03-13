@@ -10,7 +10,7 @@ const CONFIG = {
   images: {
     headerLogo: 'https://lh3.googleusercontent.com/d/1lAI-LC-RXSJPhMyFOYok8bxYRvBit_ye',
     companyLogo: 'https://lh3.googleusercontent.com/d/1zngYUKdx-lfZ8iNiKg3DvEc_LiO1eIhk',
-    backgroundImage: 'https://lh3.googleusercontent.com/d/1g77QEpWUMPhrY6OXazm1Us5SuQo-V--8'
+    backgroundImage: 'https://lh3.googleusercontent.com/d/1olAGhmPRmlcetHxPZu6HQkD2Cg877XGe'
   }
 };
 
