@@ -117,6 +117,72 @@ function initializeInstallButton() {
 }
 
 /**
+ * Check if the app is running in standalone/installed mode
+ * @returns {boolean} True if the app is installed, false otherwise
+ */
+function isAppInstalled() {
+  // Check if running in standalone mode (installed)
+  if (window.matchMedia('(display-mode: standalone)').matches || 
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      (window.navigator.standalone === true)) { // iOS Safari
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Initialize the Install App link and modal functionality
+ */
+function initializeInstallLink() {
+  const installLink = document.getElementById('installLink');
+  const installModal = document.getElementById('installModal');
+  const closeInstallModal = document.getElementById('closeInstallModal');
+  
+  // Only show the install link if the app is not installed
+  if (installLink) {
+    if (!isAppInstalled()) {
+      installLink.classList.remove('hidden');
+      
+      // Add click event listener to show the install modal
+      installLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (installModal) {
+          installModal.style.display = 'flex';
+        }
+      });
+    } else {
+      installLink.classList.add('hidden');
+    }
+  }
+  
+  // Add close button functionality to the install modal
+  if (closeInstallModal) {
+    closeInstallModal.addEventListener('click', function() {
+      if (installModal) {
+        installModal.style.display = 'none';
+      }
+    });
+  }
+  
+  // Close modal when clicking outside of it
+  if (installModal) {
+    window.addEventListener('click', function(e) {
+      if (e.target === installModal) {
+        installModal.style.display = 'none';
+      }
+    });
+  }
+  
+  // Listen for display mode changes (in case the user installs the app without refreshing)
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', function(e) {
+    if (e.matches && installLink) {
+      installLink.classList.add('hidden');
+    }
+  });
+}
+
+/**
  * Initialize email registration functionality
  */
 function initializeEmailRegistration() {
@@ -461,8 +527,11 @@ window.addEventListener('appinstalled', (e) => {
     installContainer.classList.add('hidden');
   }
   
-  // Optionally, you could show a thank you message
-  // or track installation in analytics
+  // Hide the install link if it's still visible
+  const installLink = document.getElementById('installLink');
+  if (installLink) {
+    installLink.classList.add('hidden');
+  }
 });
 
 /**
@@ -531,6 +600,9 @@ function initializeUI() {
 
   // Initialize install button
   initializeInstallButton();
+  
+  // Initialize install link and modal
+  initializeInstallLink();
 
   // Initialize email registration
   initializeEmailRegistration();
