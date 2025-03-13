@@ -242,7 +242,7 @@ body {
 }
 
 /* Target only the logo container */
-.footer a:not(.help-link) {
+.footer a:not(.help-link):not(.install-link) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,7 +263,22 @@ body {
 
 .help-link {
   position: absolute;
-  left: 32px;
+  left: 15px;
+  bottom: 25px;
+  color: rgba(255,255,255,0.7);
+  font-size: calc(14px + 0.2vmin);
+  font-weight: bold;
+  text-decoration: none;
+  line-height: 1;
+  display: inline;
+  width: auto;
+  max-width: none;
+  height: auto;
+}
+
+.install-link {
+  position: absolute;
+  right: 15px;
   bottom: 25px;
   color: rgba(255,255,255,0.7);
   font-size: calc(14px + 0.2vmin);
@@ -325,12 +340,33 @@ body {
   color: var(--text-dark);
 }
 
+.modal-body h4 {
+  margin: 1.2vh 0 0.8vh 0;
+  color: var(--kroger-blue);
+}
+
 .modal-body p, .modal-body ul {
   margin-bottom: 1vh;
 }
 
 .modal-body ul {
   padding-left: 4vw;
+}
+
+/* Install instructions styling */
+.install-instructions {
+  margin: 2vh 0;
+  padding: 1.5vh;
+  background-color: var(--kroger-light-blue);
+  border-radius: 6px;
+}
+
+.install-note {
+  font-style: italic;
+  color: var(--text-light);
+  margin-top: 2vh;
+  padding-top: 1vh;
+  border-top: 1px solid #eee;
 }
 
 /* Utility classes */
@@ -506,6 +542,10 @@ body {
   
   .search-input, .search-button, .directions-button {
     height: 40px;
+  }
+  
+  .help-link, .install-link {
+    bottom: 12px;
   }
 }
 
