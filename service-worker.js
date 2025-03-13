@@ -1,15 +1,16 @@
 /**
  * Kroger Location Finder PWA - Service Worker
  * Optimized for online-only functionality with offline notification
+ * Added cache busting for CSS updates
  */
 
-const CACHE_NAME = 'kroger-finder-cache-v9';
+const CACHE_NAME = 'kroger-finder-cache-v10'; // Incremented version number
+const CSS_CACHE_NAME = 'kroger-finder-css-cache'; // Separate cache for CSS
 
 // Cache only essential UI assets (no data)
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './styles.css',
   './app.js',
   './manifest.json',
   './images/KLA512.png',
@@ -35,14 +36,25 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.filter(cacheName => cacheName !== CACHE_NAME)
-          .map(cacheName => caches.delete(cacheName))
+        cacheNames.filter(cacheName => {
+          // Keep the CSS cache, delete all other old caches
+          return cacheName !== CACHE_NAME && cacheName !== CSS_CACHE_NAME;
+        }).map(cacheName => {
+          console.log('[Service Worker] Deleting old cache:', cacheName);
+          return caches.delete(cacheName);
+        })
       );
-    }).then(() => self.clients.claim())
+    }).then(() => {
+      // Clear the CSS cache on activation to ensure fresh CSS
+      return caches.delete(CSS_CACHE_NAME).then(() => {
+        console.log('[Service Worker] CSS cache cleared for fresh updates');
+        return self.clients.claim();
+      });
+    })
   );
 });
 
-// Fetch event - minimal intervention
+// Fetch event - with CSS special handling
 self.addEventListener('fetch', event => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
@@ -52,7 +64,33 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // For UI assets, use cache if available, otherwise fetch from network
+  // Special handling for CSS files - network first, then cache
+  if (event.request.url.endsWith('.css') || event.request.url.includes('.css?')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Cache the fresh CSS response
+          const responseClone = response.clone();
+          caches.open(CSS_CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+            console.log('[Service Worker] Updated CSS cache');
+          });
+          return response;
+        })
+        .catch(error => {
+          // If network fails, try the cache
+          return caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            throw error;
+          });
+        })
+    );
+    return;
+  }
+  
+  // For other UI assets, use cache if available, otherwise fetch from network
   event.respondWith(
     caches.match(event.request)
       .then(cachedResponse => {
@@ -70,4 +108,14 @@ self.addEventListener('fetch', event => {
           });
       })
   );
+});
+
+// Listen for messages from the main thread
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'CLEAR_CSS_CACHE') {
+    caches.delete(CSS_CACHE_NAME).then(() => {
+      console.log('[Service Worker] CSS cache cleared by request');
+      event.ports[0].postMessage({ result: 'CSS cache cleared' });
+    });
+  }
 });
