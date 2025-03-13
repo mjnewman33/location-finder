@@ -3,7 +3,7 @@
  * Optimized for online-only functionality with offline notification
  */
 
-const CACHE_NAME = 'kroger-finder-cache-v11'; // Incremented version number
+const CACHE_NAME = 'kroger-finder-cache-v12'; // Incremented version number
 const CSS_CACHE_NAME = 'kroger-finder-css-cache'; // Separate cache for CSS
 
 // Cache only essential UI assets (no data)
