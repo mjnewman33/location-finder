@@ -28,7 +28,7 @@ body {
   color: var(--text-dark);
   display: flex;
   flex-direction: column;
-  font-size: calc(16px + 0.4vmin); /* Slightly reduced base font size for better fit */
+  font-size: calc(16px + 0.4vmin); /* Slightly reduced base font size */
 }
 
 /* Header with dynamic sizing */
