@@ -4,7 +4,7 @@
  * Added cache busting for CSS updates
  */
 
-const CACHE_NAME = 'kroger-finder-cache-v10'; // Incremented version number
+const CACHE_NAME = 'kroger-finder-cache-v11'; // Incremented version number
 const CSS_CACHE_NAME = 'kroger-finder-css-cache'; // Separate cache for CSS
 
 // Cache only essential UI assets (no data)
