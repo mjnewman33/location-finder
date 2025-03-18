@@ -45,7 +45,7 @@ body {
   background-color: white;
   border-bottom: 2px solid var(--kroger-blue);
   padding: 0 1vh;
-  z-index: 10;
+  z-index: 20; /* Increased to ensure it appears above autocomplete */
   flex-shrink: 0; /* Prevent header from shrinking */
 }
 
@@ -145,10 +145,11 @@ body {
   border-top: none;
   border-radius: 0 0 5px 5px;
   box-shadow: var(--shadow-medium);
-  z-index: 50;
+  z-index: 15; /* Lower than header and footer but above content */
   margin-top: -1px; /* Connect with input field */
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: var(--kroger-blue) #f0f0f0; /* Firefox */
+  animation: fadeIn 0.2s ease-out;
 }
 
 /* Custom scrollbar for WebKit browsers */
@@ -169,7 +170,7 @@ body {
 .autocomplete-item {
   padding: 10px 15px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-speed);
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -196,19 +197,19 @@ body {
 .install-container {
   margin: 20px auto;
   text-align: center;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--transition-speed);
 }
 
 .install-button {
-  background-color: #0059a7;
+  background-color: var(--kroger-blue);
   color: white;
   border: none;
   border-radius: 4px;
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  transition: background-color 0.3s ease;
+  box-shadow: var(--shadow-light);
+  transition: background-color var(--transition-speed);
 }
 
 .install-button:hover {
@@ -301,7 +302,7 @@ body {
   justify-content: center;
   align-items: center;
   position: relative;
-  z-index: 10;
+  z-index: 20; /* Same as header to ensure consistency */
   overflow: hidden;
   flex-shrink: 0; /* Prevent footer from shrinking */
 }
@@ -456,7 +457,7 @@ body {
   padding: 10px;
   z-index: 1000;
   font-weight: bold;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-light);
 }
 
 /* Address block formatting */
@@ -616,10 +617,6 @@ body {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.autocomplete-dropdown {
-  animation: fadeIn 0.2s ease-out;
 }
 
 /* Ensure proper sizing on larger screens */
