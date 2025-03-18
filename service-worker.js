@@ -3,7 +3,7 @@
  * Enhanced with autocomplete data caching support
  */
 
-const CACHE_NAME = 'kroger-finder-cache-v14'; // Incremented version number
+const CACHE_NAME = 'kroger-finder-cache-v15'; // Incremented version number
 const CSS_CACHE_NAME = 'kroger-finder-css-cache'; // Separate cache for CSS
 const DATA_CACHE_NAME = 'kroger-finder-data-cache'; // New cache for autocomplete data
 
