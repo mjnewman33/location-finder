@@ -23,6 +23,11 @@ let appState = {
     email: null,
     accessToken: null,
     isAuthorized: null // null = not checked, true/false = checked
+  },
+  search: {
+    autocompleteData: [], // Will store Site IDs and Facility Codes
+    version: 0,            // Current version of autocomplete data
+    isDropdownVisible: false
   }
 };
 
@@ -47,6 +52,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Set up online/offline detection
     setupConnectivityDetection();
+    
+    // Load autocomplete data
+    loadAutocompleteData();
   }
 });
 
@@ -183,6 +191,63 @@ function initializeInstallLink() {
 }
 
 /**
+ * Register email with retry mechanism to handle race conditions
+ * @param {string} email - User's email address
+ * @param {string} deviceType - User's device type
+ * @returns {Promise<Object>} - Registration result
+ */
+async function registerEmailWithRetry(email, deviceType) {
+  let attempts = 0;
+  const maxAttempts = 2;
+  let delay = 3000; // Initial delay of 3 seconds
+  
+  while (attempts < maxAttempts) {
+    try {
+      // Send registration to API with device type
+      const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${encodeURIComponent(email)}&deviceType=${encodeURIComponent(deviceType)}`, {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Registration failed. Please try again later.');
+      }
+      
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      // Check if the registration was verified
+      if (result.verified === false) {
+        attempts++;
+        
+        if (attempts >= maxAttempts) {
+          console.warn('Registration could not be verified after multiple attempts');
+          throw new Error('Your registration could not be confirmed. Please try again.');
+        }
+        
+        console.log(`Verification failed, retrying in ${delay/1000} seconds... (Attempt ${attempts} of ${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // Success - return the result
+      return result;
+      
+    } catch (error) {
+      if (error.message.includes('could not be confirmed') && attempts < maxAttempts - 1) {
+        attempts++;
+        console.log(`Registration error, retrying in ${delay/1000} seconds... (Attempt ${attempts} of ${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+/**
  * Initialize email registration functionality
  */
 function initializeEmailRegistration() {
@@ -216,26 +281,8 @@ function initializeEmailRegistration() {
         // Get device type
         const deviceType = detectDeviceType();
 
-        // Send registration to API with device type
-        const response = await fetch(`${CONFIG.apiUrl}?action=registerEmail&email=${encodeURIComponent(email)}&deviceType=${encodeURIComponent(deviceType)}`, {
-          method: 'GET'
-        });
-        
-        if (!response.ok) {
-          throw new Error('Registration failed. Please try again later.');
-        }
-        
-        const result = await response.json();
-        
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        
-        // Check if the registration was verified
-        if (result.verified === false) {
-          console.warn('Registration could not be verified in the database');
-          throw new Error('Your registration could not be confirmed. Please try again.');
-        }
+        // Use the retry mechanism for registration
+        const result = await registerEmailWithRetry(email, deviceType);
         
         // Success - store user data
         appState.user.email = email;
@@ -363,6 +410,7 @@ function detectDeviceType() {
   // Fallback for other desktop browsers
   return "Desktop - Other";
 }
+
 /**
  * Save user data to localStorage
  */
@@ -376,6 +424,39 @@ function saveUserData() {
 function loadUserData() {
   const userData = localStorage.getItem('krogerFinderUser');
   return userData ? JSON.parse(userData) : null;
+}
+
+/**
+ * Save autocomplete data to localStorage
+ */
+function saveAutocompleteData() {
+  localStorage.setItem('krogerFinderAutocomplete', JSON.stringify({
+    items: appState.search.autocompleteData,
+    version: appState.search.version
+  }));
+}
+
+/**
+ * Load autocomplete data from localStorage
+ * @returns {boolean} Whether valid data was loaded
+ */
+function loadAutocompleteDataFromStorage() {
+  try {
+    const storedData = localStorage.getItem('krogerFinderAutocomplete');
+    if (storedData) {
+      const parsedData = JSON.parse(storedData);
+      if (parsedData && Array.isArray(parsedData.items) && parsedData.version) {
+        appState.search.autocompleteData = parsedData.items;
+        appState.search.version = parsedData.version;
+        console.log(`Loaded autocomplete data from storage: ${parsedData.items.length} items, version ${parsedData.version}`);
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error loading autocomplete data from storage:', error);
+    return false;
+  }
 }
 
 /**
@@ -553,6 +634,9 @@ function initializeUI() {
     }
   });
   
+  // Initialize autocomplete
+  initializeAutocomplete();
+  
   // Help modal functionality
   helpLink.addEventListener('click', function(e) {
     e.preventDefault();
@@ -609,13 +693,268 @@ function initializeUI() {
 }
 
 /**
+ * Initialize autocomplete functionality for search input
+ */
+function initializeAutocomplete() {
+  const searchInput = document.getElementById('searchInput');
+  const searchContainer = document.getElementById('searchContainer');
+  
+  if (!searchInput || !searchContainer) return;
+  
+  // Create autocomplete dropdown if it doesn't exist
+  let autocompleteDropdown = document.getElementById('autocompleteDropdown');
+  if (!autocompleteDropdown) {
+    autocompleteDropdown = document.createElement('div');
+    autocompleteDropdown.id = 'autocompleteDropdown';
+    autocompleteDropdown.className = 'autocomplete-dropdown';
+    searchContainer.appendChild(autocompleteDropdown);
+  }
+  
+  // Add input event for real-time filtering
+  searchInput.addEventListener('input', function() {
+    const query = this.value.trim().toLowerCase();
+    
+    // Hide dropdown if input is empty
+    if (!query) {
+      hideAutocompleteDropdown();
+      return;
+    }
+    
+    // Filter autocomplete items
+    const filteredItems = filterAutocompleteItems(query);
+    
+    // Update and show dropdown
+    updateAutocompleteDropdown(filteredItems, query);
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (e.target !== searchInput && e.target !== autocompleteDropdown) {
+      hideAutocompleteDropdown();
+    }
+  });
+  
+  // Focus event to show dropdown
+  searchInput.addEventListener('focus', function() {
+    const query = this.value.trim().toLowerCase();
+    if (query) {
+      const filteredItems = filterAutocompleteItems(query);
+      updateAutocompleteDropdown(filteredItems, query);
+    }
+  });
+  
+  // Keyboard navigation
+  searchInput.addEventListener('keydown', function(e) {
+    if (!appState.search.isDropdownVisible) return;
+    
+    const dropdown = document.getElementById('autocompleteDropdown');
+    const items = dropdown.getElementsByTagName('div');
+    const activeItem = dropdown.querySelector('.active');
+    
+    // Down arrow
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!activeItem) {
+        if (items.length > 0) items[0].classList.add('active');
+      } else {
+        const index = Array.from(items).indexOf(activeItem);
+        if (index < items.length - 1) {
+          activeItem.classList.remove('active');
+          items[index + 1].classList.add('active');
+        }
+      }
+    }
+    
+    // Up arrow
+    else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (activeItem) {
+        const index = Array.from(items).indexOf(activeItem);
+        if (index > 0) {
+          activeItem.classList.remove('active');
+          items[index - 1].classList.add('active');
+        }
+      }
+    }
+    
+    // Enter to select
+    else if (e.key === 'Enter' && activeItem) {
+      e.preventDefault();
+      searchInput.value = activeItem.textContent;
+      hideAutocompleteDropdown();
+      handleSearch();
+    }
+    
+    // Escape to close
+    else if (e.key === 'Escape') {
+      hideAutocompleteDropdown();
+    }
+  });
+}
+
+/**
+ * Filter autocomplete items based on query
+ * @param {string} query - The search query
+ * @returns {Array} - Filtered list of matching items
+ */
+function filterAutocompleteItems(query) {
+  if (!appState.search.autocompleteData || !appState.search.autocompleteData.length) {
+    return [];
+  }
+  
+  // Convert query to lowercase for case-insensitive matching
+  const lowerQuery = query.toLowerCase();
+  
+  // Filter items that start with the query
+  const exactMatches = appState.search.autocompleteData.filter(item => 
+    item.toLowerCase().startsWith(lowerQuery)
+  );
+  
+  // Filter items that contain the query but don't start with it
+  const partialMatches = appState.search.autocompleteData.filter(item => 
+    item.toLowerCase().includes(lowerQuery) && !item.toLowerCase().startsWith(lowerQuery)
+  );
+  
+  // Combine exact matches first (they're more relevant), then partial matches
+  // Limit to 10 items for performance
+  return [...exactMatches, ...partialMatches].slice(0, 10);
+}
+
+/**
+ * Update the autocomplete dropdown with filtered items
+ * @param {Array} items - The filtered items to display
+ * @param {string} query - The current search query
+ */
+function updateAutocompleteDropdown(items, query) {
+  const dropdown = document.getElementById('autocompleteDropdown');
+  
+  // Clear previous items
+  dropdown.innerHTML = '';
+  
+  if (items.length === 0) {
+    hideAutocompleteDropdown();
+    return;
+  }
+  
+  // Add each item to dropdown
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = item;
+    div.className = 'autocomplete-item';
+    
+    // Highlight the matching part
+    if (query) {
+      const lowerItem = item.toLowerCase();
+      const lowerQuery = query.toLowerCase();
+      const index = lowerItem.indexOf(lowerQuery);
+      
+      if (index !== -1) {
+        const beforeMatch = item.substring(0, index);
+        const match = item.substring(index, index + query.length);
+        const afterMatch = item.substring(index + query.length);
+        
+        div.innerHTML = `${beforeMatch}<strong>${match}</strong>${afterMatch}`;
+      }
+    }
+    
+    // Add click handler
+    div.addEventListener('click', function() {
+      document.getElementById('searchInput').value = item;
+      hideAutocompleteDropdown();
+      handleSearch();
+    });
+    
+    dropdown.appendChild(div);
+  });
+  
+  // Show dropdown
+  dropdown.style.display = 'block';
+  appState.search.isDropdownVisible = true;
+}
+
+/**
+ * Hide the autocomplete dropdown
+ */
+function hideAutocompleteDropdown() {
+  const dropdown = document.getElementById('autocompleteDropdown');
+  if (dropdown) {
+    dropdown.style.display = 'none';
+    appState.search.isDropdownVisible = false;
+  }
+}
+
+/**
+ * Load autocomplete data from API or localStorage
+ */
+async function loadAutocompleteData() {
+  // Try to load from localStorage first
+  const loadedFromStorage = loadAutocompleteDataFromStorage();
+  
+  // If offline, use cached data only
+  if (!navigator.onLine) {
+    console.log('Offline: Using cached autocomplete data only');
+    return;
+  }
+  
+  try {
+    // Fetch fresh data from API
+    console.log('Fetching autocomplete data from API');
+    const response = await fetch(`${CONFIG.apiUrl}?action=getAutocompleteData`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch autocomplete data');
+    }
+    
+    const result = await response.json();
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    
+    // Check if we got valid data
+    if (Array.isArray(result.items) && result.version) {
+      // Check if we need to update
+      if (!loadedFromStorage || result.version != appState.search.version) {
+        console.log(`Updating autocomplete data from version ${appState.search.version} to ${result.version}`);
+        
+        // Update app state
+        appState.search.autocompleteData = result.items;
+        appState.search.version = result.version;
+        
+        // Save to localStorage
+        saveAutocompleteData();
+      } else {
+        console.log('Autocomplete data is already up to date');
+      }
+    }
+  } catch (error) {
+    console.error('Error loading autocomplete data:', error);
+    
+    // If we don't have any data, show an error
+    if (!loadedFromStorage && (!appState.search.autocompleteData || appState.search.autocompleteData.length === 0)) {
+      console.warn('No autocomplete data available');
+    }
+  }
+}
+
+/**
+ * Check if autocomplete data needs updating
+ * @param {number} serverVersion - The server's current version
+ */
+function checkAndUpdateAutocompleteData(serverVersion) {
+  if (serverVersion && serverVersion != appState.search.version) {
+    console.log(`Autocomplete data needs update: client ${appState.search.version}, server ${serverVersion}`);
+    
+    // Fetch fresh data in the background
+    loadAutocompleteData();
+  }
+}
+
+/**
  * Load application configuration from the API
  */
 async function loadAppConfiguration() {
   try {
-    // Show initial loading state if needed
-    // document.getElementById('loading').style.display = 'block';
-    
     // Fetch configuration from API
     const response = await fetch(`${CONFIG.apiUrl}?action=getConfig`);
     
@@ -629,8 +968,6 @@ async function loadAppConfiguration() {
     // Apply configuration to UI
     applyConfiguration(config);
     
-    // Hide loading state if needed
-    // document.getElementById('loading').style.display = 'none';
   } catch (error) {
     console.error('Error loading configuration:', error);
     
@@ -688,7 +1025,6 @@ function applyConfiguration(config) {
       const supportLink = document.getElementById('supportEmail');
       if (supportLink) {
         supportLink.href = `mailto:${config.links.supportEmail}`;
-        // supportLink.textContent = config.links.supportEmail;
         console.log("Set support email to:", config.links.supportEmail);
       }
     }
@@ -704,14 +1040,14 @@ function applyFallbackConfiguration() {
   // Apply fallback images with error handling
   const headerLogo = document.getElementById('headerLogo');
   if (headerLogo) {
-    headerLogo.src = CONFIG.fallbackImages.headerLogo;
-    console.log("Set header logo to fallback:", CONFIG.fallbackImages.headerLogo);
+    headerLogo.src = CONFIG.images.headerLogo;
+    console.log("Set header logo to fallback:", CONFIG.images.headerLogo);
   }
   
   const companyLogo = document.getElementById('companyLogo');
   if (companyLogo) {
-    companyLogo.src = CONFIG.fallbackImages.companyLogo;
-    console.log("Set company logo to fallback:", CONFIG.fallbackImages.companyLogo);
+    companyLogo.src = CONFIG.images.companyLogo;
+    console.log("Set company logo to fallback:", CONFIG.images.companyLogo);
   }
   
   // Disable features that require API if needed
@@ -780,6 +1116,9 @@ function handleOnlineStatusChange() {
     if (!appState.appConfig) {
       loadAppConfiguration();
     }
+    
+    // Reload autocomplete data if we're online again
+    loadAutocompleteData();
   }
 }
 
@@ -832,14 +1171,19 @@ async function handleSearch() {
   appState.isLoading = true;
   
   try {
-    // Make API request
-    const response = await fetch(`${CONFIG.apiUrl}?action=searchLocation&query=${encodeURIComponent(query)}`);
+    // Make API request with version parameter
+    const response = await fetch(`${CONFIG.apiUrl}?action=searchLocation&query=${encodeURIComponent(query)}&version=${appState.search.version}`);
     
     if (!response.ok) {
       throw new Error('API request failed');
     }
     
     const result = await response.json();
+    
+    // Check if we need to update autocomplete data
+    if (result.version && result.needsUpdate) {
+      checkAndUpdateAutocompleteData(result.version);
+    }
     
     // Handle result
     handleSearchResult(result);
@@ -879,13 +1223,16 @@ function handleSearchResult(result) {
         </div>
         
         <div class="info-label">Phone:</div>
-       <div class="info-value"><a href="tel:${result.phone.replace(/[^0-9]/g, '')}">${result.phone}</a></div>
+        <div class="info-value"><a href="tel:${result.phone.replace(/[^0-9]/g, '')}">${result.phone}</a></div>
       </div>
       <button onclick="getDirections('${result.street.replace(/'/g, "\\'")} ${result.city.replace(/'/g, "\\'")} ${result.state} ${result.zip}')" class="directions-button">Get Directions</button>
     `;
     
     // Clear the search input
     document.getElementById('searchInput').value = '';
+    
+    // Hide the autocomplete dropdown
+    hideAutocompleteDropdown();
   }
 }
 
