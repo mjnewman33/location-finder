@@ -6,6 +6,9 @@
   --text-dark: #333;
   --text-light: #666;
   --background: #f9f9f9;
+  --shadow-light: 0 2px 10px rgba(0,0,0,0.1);
+  --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
+  --transition-speed: 0.3s;
 }
 
 /* Reset and viewport-based layout */
@@ -85,6 +88,7 @@ body {
 .search-container {
   margin-bottom: 2vh;
   width: 100%;
+  position: relative; /* Required for absolute positioning of autocomplete dropdown */
 }
 
 .search-input {
@@ -97,7 +101,7 @@ body {
   border: 2px solid var(--kroger-blue);
   border-radius: 5px;
   outline: none;
-  transition: all 0.3s;
+  transition: all var(--transition-speed);
 }
 
 .search-input:focus {
@@ -122,12 +126,73 @@ body {
   font-size: inherit;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color var(--transition-speed);
 }
 
 .search-button:hover {
   background-color: #004a8c;
 }
+
+/* Autocomplete dropdown styling */
+.autocomplete-dropdown {
+  display: none;
+  position: absolute;
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+  box-shadow: var(--shadow-medium);
+  z-index: 50;
+  margin-top: -1px; /* Connect with input field */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--kroger-blue) #f0f0f0; /* Firefox */
+}
+
+/* Custom scrollbar for WebKit browsers */
+.autocomplete-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 0 0 5px 0;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background-color: var(--kroger-blue);
+  border-radius: 4px;
+}
+
+.autocomplete-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--kroger-light-blue);
+}
+
+.autocomplete-item.active {
+  background-color: var(--kroger-light-blue);
+  font-weight: bold;
+  border-left: 3px solid var(--kroger-blue);
+}
+
+/* Styling for highlighted text in autocomplete */
+.autocomplete-item strong {
+  color: var(--kroger-blue);
+  font-weight: bold;
+}
+
 .install-container {
   margin: 20px auto;
   text-align: center;
@@ -166,7 +231,7 @@ body {
   border: 2px solid var(--kroger-blue);
   border-radius: 8px;
   padding: 2vh 3vw;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-light);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -209,7 +274,7 @@ body {
   font-size: inherit;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color var(--transition-speed);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -411,7 +476,7 @@ body {
   border-radius: 8px;
   padding: 2vh 3vw;
   margin-bottom: 2vh;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-light);
 }
 
 .email-registration-container h3 {
@@ -440,7 +505,7 @@ body {
   border: 2px solid var(--kroger-blue);
   border-radius: 5px;
   outline: none;
-  transition: all 0.3s;
+  transition: all var(--transition-speed);
   margin-bottom: 1.5vh;
 }
 
@@ -461,7 +526,7 @@ body {
   font-size: inherit;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color var(--transition-speed);
 }
 
 .register-button:hover {
@@ -474,7 +539,7 @@ body {
   border-radius: 5px;
   text-align: center;
   font-weight: bold;
-  transition: all 0.3s ease;
+  transition: all var(--transition-speed) ease;
 }
 
 .registration-message.success {
@@ -515,6 +580,48 @@ body {
   font-size: calc(14px + 0.2vmin);
 }
 
+/* Donation button styling */
+.donation-button {
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  margin-top: 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background-color var(--transition-speed);
+}
+
+.donation-button:hover {
+  background-color: #45a049;
+}
+
+/* Navigation hint styling */
+.navigation-hint {
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 4px solid #17a2b8;
+  font-style: italic;
+}
+
+.navigation-hint p {
+  margin: 0;
+  color: #495057;
+}
+
+/* Animation for autocomplete dropdown */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.autocomplete-dropdown {
+  animation: fadeIn 0.2s ease-out;
+}
+
 /* Ensure proper sizing on larger screens */
 @media (min-width: 768px) {
   body {
@@ -527,6 +634,11 @@ body {
   
   .content-wrapper {
     max-width: 500px;
+  }
+
+  /* Improve autocomplete on larger screens */
+  .autocomplete-item {
+    padding: 12px 15px;
   }
 }
 
@@ -547,36 +659,22 @@ body {
   .help-link, .install-link {
     bottom: 12px;
   }
+
+  /* Limit autocomplete dropdown height on small screens */
+  .autocomplete-dropdown {
+    max-height: 180px;
+  }
 }
 
-/* Donation button styling */
-.donation-button {
-  display: inline-block;
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px 15px;
-  margin-top: 10px;
-  border-radius: 4px;
-  text-decoration: none;
-  font-weight: bold;
-  transition: background-color 0.3s;
-}
+/* Touch device optimizations */
+@media (hover: none) {
+  /* Increase touch targets on mobile */
+  .autocomplete-item {
+    padding: 14px 15px;
+  }
 
-.donation-button:hover {
-  background-color: #45a049;
-}
-
-/* Navigation hint styling */
-.navigation-hint {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  border-left: 4px solid #17a2b8;
-  font-style: italic;
-}
-
-.navigation-hint p {
-  margin: 0;
-  color: #495057;
+  /* Add tap state for mobile */
+  .autocomplete-item:active {
+    background-color: var(--kroger-light-blue);
+  }
 }
