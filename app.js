@@ -33,29 +33,36 @@ let appState = {
 
 // Initialize the app when the document is fully loaded
 document.addEventListener('DOMContentLoaded', async function() {
-  // Initialize UI elements
-  initializeUI();
-  
-  // Force CSS refresh if service worker is available
-  refreshCSS();
-  
-  // Load images directly (don't wait for API)
-  loadImagesDirectly();
-  
-  // Validate user access
-  const hasAccess = await validateUserAccess();
-  
-  // Only proceed with full initialization if user has access
-  if (hasAccess) {
-    // Load configuration from API
-    loadAppConfiguration();
-    
-    // Set up online/offline detection
-    setupConnectivityDetection();
-    
-    // Load autocomplete data
-    loadAutocompleteData();
-  }
+    // Initialize UI elements (these run regardless of access as they set up basic components)
+    initializeUI();
+
+    // Force CSS refresh if service worker is available
+    refreshCSS();
+
+    // Load images directly (don't wait for API for these initial visuals)
+    loadImagesDirectly();
+
+    // THIS IS THE CRUCIAL GATEKEEPER.
+    // The app will wait for validateUserAccess to determine if main features should load.
+    const hasAccess = await validateUserAccess();
+
+    // Only proceed with full app initialization if validateUserAccess returns true (access granted).
+    if (hasAccess) {
+        // Load configuration from API (requires authorized access)
+        loadAppConfiguration();
+
+        // Set up online/offline detection (monitors connectivity for an authorized user)
+        setupConnectivityDetection();
+
+        // Load autocomplete data (requires authorized access)
+        loadAutocompleteData();
+    } else {
+        // If hasAccess is NOT granted (because validateUserAccess returned false),
+        // validateUserAccess has already handled displaying either the
+        // registration form or the access denied message.
+        // The main content of the app will remain hidden.
+        console.log('Access not granted. Main app features (search, config, autocomplete) not loaded.');
+    }
 });
 
 /**
@@ -246,75 +253,6 @@ async function registerEmailWithRetry(email, deviceType) {
     }
   }
 }
-
-/**
- * Initialize email registration functionality
- */
-function initializeEmailRegistration() {
-  const emailForm = document.getElementById('emailRegistrationForm');
-  const messageDiv = document.getElementById('registrationMessage');
-  
-  if (emailForm) {
-    emailForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const emailInput = document.getElementById('emailInput');
-      const email = emailInput.value.trim();
-      
-      // Basic validation
-      if (!email || !isValidEmail(email)) {
-        showRegistrationMessage('Please enter a valid email address', 'error');
-        return;
-      }
-      
-      // Disable form while processing
-      const registerButton = document.getElementById('registerButton');
-      registerButton.disabled = true;
-      registerButton.textContent = 'Registering...';
-      
-      try {
-        // Check if we're online
-        if (!navigator.onLine) {
-          throw new Error('You are currently offline. Please try again when connected.');
-        }
-        
-        // Get device type
-        const deviceType = detectDeviceType();
-
-        // Use the retry mechanism for registration
-        const result = await registerEmailWithRetry(email, deviceType);
-        
-        // Success - store user data
-        appState.user.email = email;
-        appState.user.accessToken = result.accessToken;
-        appState.user.isAuthorized = true;
-        
-        // Save user data to localStorage
-        saveUserData();
-        
-        // Show success message
-        showRegistrationMessage('Registration successful! Thank you for subscribing.', 'success');
-        emailInput.value = '';
-        
-        // Hide registration form after successful registration
-        setTimeout(() => {
-          const emailContainer = document.getElementById('emailRegistrationContainer');
-          if (emailContainer) {
-            emailContainer.style.display = 'none';
-          }
-        }, 3000);
-        
-      } catch (error) {
-        console.error('Registration error:', error);
-        showRegistrationMessage(error.message || 'Registration failed. Please try again.', 'error');
-      } finally {
-        // Re-enable form
-        registerButton.disabled = false;
-        registerButton.textContent = 'Register';
-      }
-    });
-  }
-  
   // Check if user is already registered
   const savedUserData = loadUserData();
   if (savedUserData && savedUserData.email) {
@@ -326,7 +264,6 @@ function initializeEmailRegistration() {
       emailContainer.style.display = 'none';
     }
   }
-}
 
 /**
  * Display registration status message
@@ -462,142 +399,234 @@ function loadAutocompleteDataFromStorage() {
 /**
  * Check if user has access to the application
  * This is called when the app starts
+ * @returns {Promise<boolean>} True if access is granted, false otherwise.
+ * If false, the relevant form/message (registration/denied) is shown.
  */
 async function validateUserAccess() {
-  // Skip if no user data is stored
-  if (!appState.user || !appState.user.email || !appState.user.accessToken) {
-    return true; // Allow access if not registered (they'll see registration form)
-  }
-  
-  // Skip validation if offline
-  if (!navigator.onLine) {
-    return true; // Allow access when offline
-  }
-  
-  try {
-    // Send validation request to API
-    const response = await fetch(`${CONFIG.apiUrl}?action=validateAccess&email=${encodeURIComponent(appState.user.email)}&token=${encodeURIComponent(appState.user.accessToken)}`);
-    
-    if (!response.ok) {
-      console.log('Validation failed - showing registration form again');
-      
-      // Show registration form again
-      const emailContainer = document.getElementById('emailRegistrationContainer');
-      if (emailContainer) {
-        emailContainer.style.display = 'block';
-      }
-      
-      return true; // Allow access so they can re-register
-    }
-    
-    const result = await response.json();
-    
-    // Check if email was found in the database
-    if (result.validEmail === false) {
-      console.log('Email not found in database - showing registration form');
-      
-      // Clear the invalid user data
-      appState.user = {
-        email: null,
-        accessToken: null,
-        isAuthorized: null
-      };
-      
-      // Save the cleared data
-      saveUserData();
-      
-      // Show registration form again
-      const emailContainer = document.getElementById('emailRegistrationContainer');
-      if (emailContainer) {
-        emailContainer.style.display = 'block';
-      }
-      
-      return true; // Allow access so they can register properly
-    }
-    
-    // Update user authorization status
-    appState.user.isAuthorized = result.hasAccess === true;
-    
-    // Save updated status
-    saveUserData();
-    
-    // If access denied but it's a valid email, show registration form again
-    if (!appState.user.isAuthorized && result.validEmail === true) {
-      console.log('Token invalid but email valid - showing registration form');
-      
-      // Show registration form again
-      const emailContainer = document.getElementById('emailRegistrationContainer');
-      if (emailContainer) {
-        emailContainer.style.display = 'block';
-      }
-      
-      return true; // Allow access so they can re-register
-    }
-    
-    // If access denied, show access denied message
-    if (!appState.user.isAuthorized) {
-      showAccessDenied();
-      return false;
-    }
-    
-    return appState.user.isAuthorized;
-    
-  } catch (error) {
-    console.error('Access validation error:', error);
-    
-    // On error, show registration form again
     const emailContainer = document.getElementById('emailRegistrationContainer');
-    if (emailContainer) {
-      emailContainer.style.display = 'block';
+    const mainContainer = document.getElementById('main-container'); // Fixed: was 'main-content'
+    const accessDeniedContainer = document.getElementById('accessDeniedContainer');
+
+    // --- Step 1: Hide all main app sections initially ---
+    // We will then show only the appropriate section based on access status.
+    if (mainContainer) mainContainer.style.display = 'none';
+    if (emailContainer) emailContainer.style.display = 'none';
+    if (accessDeniedContainer) accessDeniedContainer.style.display = 'none';
+
+    // Load any existing user data from localStorage
+    const savedUserData = loadUserData();
+    if (savedUserData) {
+        appState.user = savedUserData;
     }
-    
-    return true; // Allow access so they can re-register
-  }
+
+    // --- Step 2: Check for existing local user data ---
+    // If no user data is stored locally, it means they are new or cleared data.
+    // In this new model, we will *force* them to register.
+            if (!appState.user || !appState.user.email || !appState.user.accessToken) {
+        console.log('No stored user data. Forcing registration.');
+        if (emailContainer) {
+            emailContainer.style.display = 'block'; // Show registration form
+            emailContainer.classList.remove('hidden'); // Remove hidden class if present
+        }
+        return false; // Deny access to main content until registered
+    }
+
+    // --- Step 3: Check online status for *registered* users ---
+    // If a user is registered but offline, allow them to use the app
+    // based on their cached (assumed valid) credentials.
+    if (!navigator.onLine) {
+        console.log('Offline. Allowing access for registered user based on cached data.');
+        if (mainContainer) mainContainer.style.display = 'block'; // Show main content
+        return true; // Grant access
+    }
+
+    // --- Step 4: Online validation for *registered* users ---
+    // If user is online and has stored data, validate with the backend.
+    try {
+        console.log('Online. Validating access with backend...');
+        const response = await fetch(`${CONFIG.apiUrl}?action=validateAccess&email=${encodeURIComponent(appState.user.email)}&token=${encodeURIComponent(appState.user.accessToken)}`);
+
+        if (!response.ok) {
+            // Network error or non-200 HTTP status from API
+            console.warn('Backend validation failed (network error or non-OK status). Forcing re-registration.');
+            appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear invalid local data
+            saveUserData();
+            if (emailContainer) {
+                emailContainer.style.display = 'block'; // Show registration form
+                emailContainer.classList.remove('hidden'); // Remove hidden class if present
+            }
+            return false; // Deny access
+        }
+
+        const result = await response.json();
+
+        if (result.error) {
+            console.error('API returned an error during validation:', result.error);
+            appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear invalid local data
+            saveUserData();
+            if (emailContainer) {
+                emailContainer.style.display = 'block'; // Show registration form
+                emailContainer.classList.remove('hidden'); // Remove hidden class if present
+            }
+            return false; // Deny access
+        }
+
+        // --- Step 5: Process backend validation result ---
+        // If email not found in backend (e.g., deleted from sheet)
+        if (result.validEmail === false) {
+            console.log('Registered email not found in backend database. Forcing re-registration.');
+            appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear invalid local data
+            saveUserData();
+            if (emailContainer) {
+                emailContainer.style.display = 'block'; // Show registration form
+                emailContainer.classList.remove('hidden'); // Remove hidden class if present
+            }
+            return false; // Deny access
+        }
+
+        // Update appState with the authorization status from backend
+        appState.user.isAuthorized = result.hasAccess === true;
+        saveUserData(); // Persist the updated authorization status
+
+        // If backend explicitly denied access (email found, but token/status incorrect)
+        if (!appState.user.isAuthorized) {
+            console.log('Backend denied access (email valid, but token/status incorrect). Showing access denied message.');
+            showAccessDenied(); // This function will display accessDeniedContainer
+            return false; // Deny access
+        }
+
+        // If we reached here, access is granted and validated online
+        console.log('Access validated and granted.');
+        if (mainContainer) mainContainer.style.display = 'block'; // Show main app content
+        return true; // Grant access
+
+    } catch (error) {
+        console.error('Unexpected error during access validation:', error);
+        // Catch any uncaught network issues or parsing errors
+        appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear local data
+        saveUserData();
+        if (emailContainer) {
+            emailContainer.style.display = 'block'; // Show registration form
+            emailContainer.classList.remove('hidden'); // Remove hidden class if present
+        }
+        return false; // Deny access
+    }
 }
 
 /**
- * Show access denied message
+ * Displays the access denied message and hides other main content.
+ * This version uses the pre-existing #accessDeniedContainer from HTML.
  */
 function showAccessDenied() {
-  // Hide all main content
-  const mainContent = document.getElementById('main-content');
-  if (mainContent) {
-    mainContent.style.display = 'none';
-  }
-  
-  // Show access denied message
-  const accessDenied = document.getElementById('access-denied');
-  if (!accessDenied) {
-    // Create access denied element 
-    const deniedDiv = document.createElement('div');
-    deniedDiv.id = 'access-denied';
-    deniedDiv.className = 'access-denied';
-    deniedDiv.innerHTML = `
-      <h2>Access Denied</h2>
-      <p>Your access to this application has been revoked.</p>
-      <p>Please contact support if you believe this is an error.</p>
-      <button id="reregisterButton" class="btn">Register Again</button>
-    `;
-    document.body.appendChild(deniedDiv);
-    
-    // Add event listener to re-register button
-    document.getElementById('reregisterButton').addEventListener('click', function() {
-      // Clear user data
-      appState.user = {
-        email: null,
-        accessToken: null,
-        isAuthorized: null
-      };
-      saveUserData();
-      
-      // Reload the page
-      window.location.reload();
-    });
-  } else {
-    accessDenied.style.display = 'block';
-  }
+    const mainContainer = document.getElementById('main-container'); // Fixed: was 'main-content'
+    const accessDeniedContainer = document.getElementById('accessDeniedContainer');
+    const emailRegistrationContainer = document.getElementById('emailRegistrationContainer');
+
+    // Hide other primary sections
+    if (mainContainer) mainContainer.style.display = 'none';
+    if (emailRegistrationContainer) emailRegistrationContainer.style.display = 'none';
+
+    // Show the access denied container
+    if (accessDeniedContainer) {
+        accessDeniedContainer.classList.remove('hidden'); // Ensure it's not hidden by the 'hidden' class
+        accessDeniedContainer.style.display = 'block'; // Ensure it's displayed (in case CSS display:none was used)
+
+        // Attach event listener to the re-register button within this container
+        const reregisterButton = document.getElementById('reregisterButton');
+        if (reregisterButton) {
+            reregisterButton.onclick = function() {
+                // Clear user data to force a fresh registration attempt
+                appState.user = {
+                    email: null,
+                    accessToken: null,
+                    isAuthorized: null
+                };
+                saveUserData();
+                window.location.reload(); // Reload the page to restart the access flow
+            };
+        }
+    }
 }
 
+/**
+ * Modified email registration to show main content after successful registration
+ */
+function initializeEmailRegistration() {
+  const emailForm = document.getElementById('emailRegistrationForm');
+  const messageDiv = document.getElementById('registrationMessage');
+  
+  if (emailForm) {
+    emailForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const emailInput = document.getElementById('emailInput');
+      const email = emailInput.value.trim();
+      
+      // Basic validation
+      if (!email || !isValidEmail(email)) {
+        showRegistrationMessage('Please enter a valid email address', 'error');
+        return;
+      }
+      
+      // Disable form while processing
+      const registerButton = document.getElementById('registerButton');
+      registerButton.disabled = true;
+      registerButton.textContent = 'Registering...';
+      
+      try {
+        // Check if we're online
+        if (!navigator.onLine) {
+          throw new Error('You are currently offline. Please try again when connected.');
+        }
+        
+        // Get device type
+        const deviceType = detectDeviceType();
+
+        // Use the retry mechanism for registration
+        const result = await registerEmailWithRetry(email, deviceType);
+        
+        // Success - store user data
+        appState.user.email = email;
+        appState.user.accessToken = result.accessToken;
+        appState.user.isAuthorized = true;
+        
+        // Save user data to localStorage
+        saveUserData();
+        
+        // Show success message
+        showRegistrationMessage('Registration successful! Loading application...', 'success');
+        emailInput.value = '';
+        
+        // Hide registration form and show main content after successful registration
+        setTimeout(() => {
+          const emailContainer = document.getElementById('emailRegistrationContainer');
+          const mainContainer = document.getElementById('main-container');
+          
+          if (emailContainer) {
+            emailContainer.style.display = 'none';
+          }
+          if (mainContainer) {
+            mainContainer.style.display = 'block';
+          }
+          
+          // Now that user is registered and main content is shown, load the app features
+          loadAppConfiguration();
+          setupConnectivityDetection();
+          loadAutocompleteData();
+          
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Registration error:', error);
+        showRegistrationMessage(error.message || 'Registration failed. Please try again.', 'error');
+      } finally {
+        // Re-enable form
+        registerButton.disabled = false;
+        registerButton.textContent = 'Register';
+      }
+    });
+  }
+}
 // Listen for the appinstalled event
 window.addEventListener('appinstalled', (e) => {
   console.log('App was installed successfully');
@@ -805,26 +834,33 @@ function filterAutocompleteItems(query) {
   // Convert query to lowercase for case-insensitive matching
   const lowerQuery = query.toLowerCase();
   
-  // Filter items that start with the query
-  const exactMatches = appState.search.autocompleteData.filter(item => 
-    item.toLowerCase().startsWith(lowerQuery)
-  );
+  // Strip leading zeros from the search query to match data that lost leading zeros
+  const queryWithoutLeadingZeros = query.replace(/^0+/, '');
+  const lowerQueryNoZeros = queryWithoutLeadingZeros.toLowerCase();
+  
+  // Filter items that start with the query (try both versions)
+  const exactMatches = appState.search.autocompleteData.filter(item => {
+    const lowerItem = item.toLowerCase();
+    return lowerItem.startsWith(lowerQuery) || 
+           (queryWithoutLeadingZeros && lowerItem.startsWith(lowerQueryNoZeros));
+  });
   
   // Filter items that contain the query but don't start with it
-  const partialMatches = appState.search.autocompleteData.filter(item => 
-    item.toLowerCase().includes(lowerQuery) && !item.toLowerCase().startsWith(lowerQuery)
-  );
+  const partialMatches = appState.search.autocompleteData.filter(item => {
+    const lowerItem = item.toLowerCase();
+    const includesOriginal = lowerItem.includes(lowerQuery);
+    const includesNoZeros = queryWithoutLeadingZeros && lowerItem.includes(lowerQueryNoZeros);
+    const startsWithOriginal = lowerItem.startsWith(lowerQuery);
+    const startsWithNoZeros = queryWithoutLeadingZeros && lowerItem.startsWith(lowerQueryNoZeros);
+    
+    return (includesOriginal || includesNoZeros) && !startsWithOriginal && !startsWithNoZeros;
+  });
   
   // Combine exact matches first (they're more relevant), then partial matches
   // Limit to 10 items for performance
   return [...exactMatches, ...partialMatches].slice(0, 10);
 }
 
-/**
- * Update the autocomplete dropdown with filtered items
- * @param {Array} items - The filtered items to display
- * @param {string} query - The current search query
- */
 function updateAutocompleteDropdown(items, query) {
   const dropdown = document.getElementById('autocompleteDropdown');
   
