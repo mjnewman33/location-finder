@@ -34,6 +34,23 @@ body {
   font-size: calc(16px + 0.4vmin); /* Slightly reduced base font size */
 }
 
+/* --- NEW CSS RULES FOR INITIAL HIDING --- */
+/* These ensure that main content, registration, and access denied sections */
+/* are hidden by default until JavaScript determines what to show. */
+/* #main-container {
+    display: none; // <--- REMOVE OR COMMENT OUT THIS LINE
+} */
+
+#emailRegistrationContainer {
+    display: none;
+}
+
+#accessDeniedContainer {
+    display: none;
+}
+/* --- END NEW CSS RULES --- */
+
+
 /* Header with dynamic sizing */
 .header {
   height: 10vh;
@@ -325,7 +342,7 @@ body {
   margin: 0;
   display: block;
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
-}    
+}     
 
 .help-link {
   position: absolute;
@@ -541,6 +558,16 @@ body {
   text-align: center;
   font-weight: bold;
   transition: all var(--transition-speed) ease;
+}
+
+/* Ensure background shows on registration screen */
+#emailRegistrationContainer.container {
+  background-image: url('https://lh3.googleusercontent.com/d/1olAGhmPRmlcetHxPZu6HQkD2Cg877XGe');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-color: rgba(249, 249, 249, 0.6);
+  background-blend-mode: overlay;
 }
 
 .registration-message.success {
