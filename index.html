@@ -1,151 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Kroger Location Finder</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#0059a7">
-  <!-- PWA iOS Support -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Kroger Finder">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kroger Location Finder</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0059a7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Kroger Finder">
 
-  <!-- iOS icons -->
-  <link rel="apple-touch-icon" sizes="152x152" href="./images/KLA152.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="./images/KLA180.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="./images/KLA152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="./images/KLA180.png">
 </head>
 <body>
-  <!-- Header with Kroger logo -->
-  <header class="header">
-    <img id="headerLogo" alt="Kroger Logo" class="logo">  
-  </header>
-  
-  <div class="container" id="main-container">
-    <div class="content-wrapper">
-      <!-- Search form -->
-      <div id="searchContainer" class="search-container">
-        <input type="text" id="searchInput" class="search-input" placeholder="Enter Site ID or Facility Code">
-        <button id="searchBtn" class="search-button">Search</button>
-      </div>
-
-      <!-- Email Registration Container -->
-<div id="emailRegistrationContainer" class="email-registration-container">
-  <h3>Stay Updated</h3>
-  <p>Register to receive updates and notifications about Kroger locations.</p>
-  <form id="emailRegistrationForm" class="email-registration-form">
-    <input 
-      type="email" 
-      id="emailInput" 
-      class="email-input" 
-      placeholder="Enter your email address" 
-      required
-    >
-    <button type="submit" id="registerButton" class="register-button">Register</button>
-  </form>
-  <div id="registrationMessage" class="registration-message hidden"></div>
-</div>
-
-<!-- Access Denied Message (initially hidden) -->
-<div id="accessDeniedContainer" class="access-denied-container hidden">
-  <div class="access-denied-message">
-    <h3>Access Restricted</h3>
-    <p>Your access to this application has been revoked. If you believe this is an error, please contact support.</p>
-  </div>
-</div>
-
-      <!-- Installation prompt button (initially hidden) -->
-<div id="installContainer" class="install-container hidden">
-  <button id="installButton" class="install-button">Install App</button>
-</div>
-      
-      <!-- Loading indicator -->
-      <div id="loading">Searching for location...</div>
-      
-      <!-- Results area (initially hidden) -->
-      <div id="resultArea" class="result-container hidden">
-        <!-- This will be filled by JavaScript -->
-      </div>
+    <header class="header">
+        <img id="headerLogo" alt="Kroger Logo" class="logo">  
+    </header>
+    
+    <!-- Email Registration Container - MOVED OUTSIDE main-container -->
+    <div class="container" id="emailRegistrationContainer" class="email-registration-container" style="display: none;">
+        <div class="content-wrapper">
+            <div class="email-registration-container">
+                <h3>Stay Updated</h3>
+                <p>Register to receive access and updates about Kroger locations.</p>
+                <form id="emailRegistrationForm" class="email-registration-form">
+                    <input 
+                        type="email" 
+                        id="emailInput" 
+                        class="email-input" 
+                        placeholder="Enter your email address" 
+                        required
+                    >
+                    <button type="submit" id="registerButton" class="register-button">Register</button>
+                </form>
+                <div id="registrationMessage" class="registration-message hidden"></div>
+            </div>
+        </div>
     </div>
-  </div>
-  
- <!-- Footer with company logo and help link -->
-<footer class="footer">
-  <a id="companyWebsite" href="#" target="_blank">
-    <img id="companyLogo" alt="Company Logo" class="company-logo">
-  </a>
-  <a href="#" id="helpLink" class="help-link">Help</a>
-  <!-- Add Install App link (will be conditionally shown via JavaScript) -->
-  <a href="#" id="installLink" class="install-link hidden">Installation Help</a>
-</footer>
-  
-  <!-- Help Modal -->
-  <div id="helpModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">Help & Information</h2>
-        <button id="closeModal" class="close-button">&times;</button>
-      </div>
-      <div class="modal-body">
-  <h3>How to Use This App</h3>
-  <p>Enter a valid Kroger Site ID (i.e. CI444) or Facility Code (i.e. 01400444) in the search box and click "Search" to find location details. If the address is successfully found, you will be presented with a "Get Directions" button. Pressing that will open your default maps app on your device.</p>
-  
-  <h3>Contact Support</h3>
-  <p>There are 2800 Sites and my data is 2yrs old, If sites need added, removed, or updated, or you have any other issues please contact us at:</p>
-  <p><a id="supportEmail">Email Support</a></p>
-  
-  <h3>Support This App</h3>
-  <p>If you find this app useful, please consider making a donation to help with ongoing development costs.</p>
-  <a href="https://pay.newman.technology" target="_blank" class="donation-button">Make a Donation</a>
-  
-  <!-- Post-registration navigation hint (hidden by default) -->
-  <div id="postRegistrationHint" class="navigation-hint hidden">
-    <p>You can return to this screen anytime by clicking "Help" in the app.</p>
-  </div>
-</div>
-    </div>
-  </div>
 
-  <!-- Install Modal -->
-<div id="installModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 class="modal-title">Install This App</h2>
-      <button id="closeInstallModal" class="close-button">&times;</button>
+    <!-- Access Denied Container - MOVED OUTSIDE main-container -->
+    <div class="container" id="accessDeniedContainer" class="access-denied-container" style="display: none;">
+        <div class="content-wrapper">
+            <div class="access-denied-message">
+                <h3>Access Restricted</h3>
+                <p>Your access to this application has been revoked. If you believe this is an error, please contact support.</p>
+                <button id="reregisterButton" class="register-button">Register Again</button> 
+            </div>
+        </div>
     </div>
-    <div class="modal-body">
-      <h3>For the best experience, install this app on your device:</h3>
-      
-      <div class="install-instructions">
-        <h4>Chrome and Android Users:</h4>
-        <p>You should see an "Install App" button at the top of the screen. If not visible, click the three-dot menu in your browser and select "Install App" or "Add to Home Screen."</p>
-        
-        <h4>iOS Users (iPhone/iPad):</h4>
-        <p>1. Tap the Share button (square with up arrow).</p>
-        <p>2. Scroll down in the share menu</p>
-        <p>3. Tap "Add to Home Screen"</p>
-        <p>4. Confirm by tapping "Add" in the upper right</p>
-      </div>
-      
-      <p class="install-note">Installing the app provides faster access and a full-screen experience without browser controls.</p>
+    
+    <!-- Main App Container - Only shows when user has access -->
+    <div class="container" id="main-container" style="display: none;">
+        <div class="content-wrapper">
+            <div id="searchContainer" class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Enter Site ID or Facility Code">
+                <button id="searchBtn" class="search-button">Search</button>
+            </div>
+
+            <div id="installContainer" class="install-container hidden">
+                <button id="installButton" class="install-button">Install App</button>
+            </div>
+            
+            <div id="loading">Searching for location...</div>
+            
+            <div id="resultArea" class="result-container hidden">
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-  
-  <!-- Offline notification banner -->
-  <div id="offline-notification" class="offline-notification">You are currently offline</div>
-  
-  <script src="app.js"></script>
-  <script>
-    // Register service worker for PWA functionality
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js')
-          .then(reg => console.log('Service worker registered'))
-          .catch(err => console.error('Service worker registration failed'));
-      });
-    }
-  </script>
-</body>
+    
+    <footer class="footer">
+        <a id="companyWebsite" href="#" target="_blank">
+            <img id="companyLogo" alt="Company Logo" class="company-logo">
+        </a>
+        <a href="#" id="helpLink" class="help-link">Help</a>
+        <a href="#" id="installLink" class="install-link hidden">Install Help</a>
+    </footer>
+    
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Help & Information</h2>
+                <button id="closeModal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>How to Use This App</h3>
+                <p>Enter a valid Kroger Site ID (i.e. CI444) or Facility Code (i.e. 01400444) in the search box and click "Search" to find location details. If the address is successfully found, you will be presented with a "Get Directions" button. Pressing that will open your default maps app on your device.</p>
+                
+                <h3>Contact Support</h3>
+                <p>There are 2800 Sites and my data is 2yrs old, If sites need added, removed, or updated, or you have any other issues please contact us at:</p>
+                <p><a id="supportEmail">Email Support</a></p>
+                
+                <h3>Support This App</h3>
+                <p>If you find this app useful, please consider making a donation to help with ongoing development costs.</p>
+                <a href="https://pay.newman.technology" target="_blank" class="donation-button">Make a Donation</a>
+                
+                <div id="postRegistrationHint" class="navigation-hint hidden">
+                    <p>You can return to this screen anytime by clicking "Help" in the bottom left of the app.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="installModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Install This App</h2>
+                <button id="closeInstallModal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>For the best experience, install this app on your device:</h3>
+                
+                <div class="install-instructions">
+                    <h4>Chrome and Android Users:</h4>
+                    <p>You should see an "Install App" button at the top of the screen. If not visible, click the three-dot menu in your browser and select "Install App" or "Add to Home Screen."</p>
+                    
+                    <h4>iOS Users (iPhone/iPad):</h4>
+                    <p>1. Tap the Share button (square with up arrow).</p>
+                    <p>2. Scroll down in the share menu</p>
+                    <p>3. Tap "Add to Home Screen"</p>
+                    <p>4. Confirm by tapping "Add" in the upper right</p>
+                </div>
+                
+                <p class="install-note">Installing the app provides faster access and a full-screen experience without browser controls.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="offline-notification" class="offline-notification">You are currently offline</div>
+    
+    <script src="app.js"></script>
+    </body>
 </html>
