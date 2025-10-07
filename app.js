@@ -447,28 +447,19 @@ async function validateUserAccess() {
         const response = await fetch(`${CONFIG.apiUrl}?action=validateAccess&email=${encodeURIComponent(appState.user.email)}&token=${encodeURIComponent(appState.user.accessToken)}`);
 
         if (!response.ok) {
-            // Network error or non-200 HTTP status from API
-            console.warn('Backend validation failed (network error or non-OK status). Forcing re-registration.');
-            appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear invalid local data
-            saveUserData();
-            if (emailContainer) {
-                emailContainer.style.display = 'block'; // Show registration form
-                emailContainer.classList.remove('hidden'); // Remove hidden class if present
-            }
-            return false; // Deny access
+            // Network error - trust cached credentials instead of forcing re-registration
+            console.warn('Backend unreachable (network error). Using cached credentials.');
+            if (mainContainer) mainContainer.style.display = 'block';
+            return true;
         }
 
         const result = await response.json();
 
         if (result.error) {
-            console.error('API returned an error during validation:', result.error);
-            appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear invalid local data
-            saveUserData();
-            if (emailContainer) {
-                emailContainer.style.display = 'block'; // Show registration form
-                emailContainer.classList.remove('hidden'); // Remove hidden class if present
-            }
-            return false; // Deny access
+            // API error - trust cached credentials instead of forcing re-registration
+            console.warn('API error during validation:', result.error, '. Using cached credentials.');
+            if (mainContainer) mainContainer.style.display = 'block';
+            return true;
         }
 
         // --- Step 5: Process backend validation result ---
@@ -501,15 +492,10 @@ async function validateUserAccess() {
         return true; // Grant access
 
     } catch (error) {
-        console.error('Unexpected error during access validation:', error);
-        // Catch any uncaught network issues or parsing errors
-        appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear local data
-        saveUserData();
-        if (emailContainer) {
-            emailContainer.style.display = 'block'; // Show registration form
-            emailContainer.classList.remove('hidden'); // Remove hidden class if present
-        }
-        return false; // Deny access
+        // Unexpected error (timeout, network, etc.) - trust cached credentials
+        console.warn('Unexpected error during validation:', error, '. Using cached credentials.');
+        if (mainContainer) mainContainer.style.display = 'block';
+        return true;
     }
 }
 
