@@ -1,5 +1,5 @@
 /**
- * Kroger Location Finder PWA
+ * Site Finder PWA
  * Main application JavaScript
  * COMPLETE REPLACEMENT VERSION - Includes admin functionality
  */
