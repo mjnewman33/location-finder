@@ -76,6 +76,7 @@
         </a>
         <a href="#" id="helpLink" class="help-link">Help</a>
         <a href="#" id="installLink" class="install-link hidden">Install Help</a>
+        <a href="#" id="adminLink" class="admin-link hidden">Admin</a>
     </footer>
     
     <div id="helpModal" class="modal">
@@ -124,6 +125,106 @@
                 </div>
                 
                 <p class="install-note">Installing the app provides faster access and a full-screen experience without browser controls.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Admin Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="adminModalTitle">Admin Panel</h2>
+                <button id="closeAdminModal" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                
+                <!-- ADMIN MENU (Step 1) -->
+                <div id="adminMenuScreen" class="admin-screen">
+                    <div class="menu-buttons">
+                        <button id="showAddLocationBtn" class="menu-button">Add New Location</button>
+                        <button id="showDeleteRequestBtn" class="menu-button delete-menu-button">Request Location Deletion</button>
+                    </div>
+                </div>
+
+                <!-- ADD LOCATION SCREEN (Step 2A) -->
+                <div id="addLocationScreen" class="admin-screen hidden">
+                    <button id="backFromAddBtn" class="admin-button back-button">← Back to Menu</button>
+                    
+                    <form id="addLocationForm" class="admin-form">
+                        <div class="form-group">
+                            <label for="adminSiteId">Site ID: <span class="required">*</span></label>
+                            <input type="text" id="adminSiteId" class="admin-input" placeholder="e.g., CI444" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="adminFacilityCode">Facility Code: <span class="required">*</span></label>
+                            <input type="text" id="adminFacilityCode" class="admin-input" placeholder="e.g., 01400444" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="adminStreet">Street Address: <span class="required">*</span></label>
+                            <input type="text" id="adminStreet" class="admin-input" placeholder="e.g., 123 Main St" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="adminCity">City: <span class="required">*</span></label>
+                            <input type="text" id="adminCity" class="admin-input" placeholder="e.g., Cincinnati" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="adminState">State: <span class="required">*</span></label>
+                            <input type="text" id="adminState" class="admin-input" placeholder="e.g., OH" maxlength="2" required>
+                            <small class="field-hint">2-letter state code</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="adminZip">Zip Code: <span class="required">*</span></label>
+                            <input type="text" id="adminZip" class="admin-input" placeholder="e.g., 45202" required>
+                            <small class="field-hint">At least 5 digits</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="adminPhone">Phone:</label>
+                            <input type="tel" id="adminPhone" class="admin-input" placeholder="e.g., (513) 555-1234">
+                            <small class="field-hint">Optional - 10 digits with area code</small>
+                        </div>
+                        
+                        <button type="submit" id="addLocationButton" class="admin-button submit-button">Add Location</button>
+                        <div id="addLocationMessage" class="admin-message hidden"></div>
+                    </form>
+                </div>
+
+                <!-- DELETE REQUEST SCREEN (Step 2B) -->
+                <div id="deleteRequestScreen" class="admin-screen hidden">
+                    <button id="backFromDeleteBtn" class="admin-button back-button">← Back to Menu</button>
+                    
+                    <div class="admin-delete-section">
+                        <div class="form-group">
+                            <label for="adminDeleteSearch">Search for Location:</label>
+                            <input type="text" id="adminDeleteSearch" class="admin-input" placeholder="Enter Site ID or Facility Code">
+                            <div id="adminDeleteAutocomplete" class="autocomplete-dropdown"></div>
+                        </div>
+                        
+                        <div id="adminDeletePreview" class="delete-preview hidden">
+                            <h4>Selected Location:</h4>
+                            <div class="preview-info">
+                                <strong>Site:</strong> <span id="previewSiteId"></span><br>
+                                <strong>Facility Code:</strong> <span id="previewFacilityCode"></span><br>
+                                <strong>Address:</strong> <span id="previewAddress"></span><br>
+                                <strong>Phone:</strong> <span id="previewPhone"></span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="deleteReason">Reason for deletion (optional):</label>
+                                <textarea id="deleteReason" class="admin-textarea" placeholder="Why should this location be removed? (e.g., 'Store permanently closed', 'Duplicate entry', etc.)" rows="3"></textarea>
+                            </div>
+                            
+                            <button id="requestDeleteButton" class="admin-button delete-request-button">Request Deletion</button>
+                            <div id="deleteRequestMessage" class="admin-message hidden"></div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
