@@ -1,7 +1,7 @@
 {
-  "name": "Kroger Location Finder",
-  "short_name": "Kroger Finder",
-  "description": "Quickly find Kroger locations by Site ID or Facility Code",
+  "name": "Site Finder",
+  "short_name": "Site Finder",
+  "description": "Quickly find Site locations by Site ID or Facility Code",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
