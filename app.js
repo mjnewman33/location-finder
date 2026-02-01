@@ -1,6 +1,7 @@
 /**
  * Kroger Location Finder PWA
  * Main application JavaScript
+ * COMPLETE REPLACEMENT VERSION - Includes admin functionality
  */
 
 // Configuration with API endpoint
@@ -22,12 +23,18 @@ let appState = {
   user: {
     email: null,
     accessToken: null,
-    isAuthorized: null // null = not checked, true/false = checked
+    isAuthorized: null, // null = not checked, true/false = checked
+    isAdmin: false // NEW: Admin status
   },
   search: {
     autocompleteData: [], // Will store Site IDs and Facility Codes
     version: 0,            // Current version of autocomplete data
     isDropdownVisible: false
+  },
+  // NEW: Admin-specific state
+  admin: {
+    currentScreen: 'menu', // 'menu', 'add', 'delete'
+    selectedLocation: null  // For delete requests
   }
 };
 
@@ -56,6 +63,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Load autocomplete data (requires authorized access)
         loadAutocompleteData();
+        
+        // NEW: Initialize admin features if user is admin
+        initializeAdminFeatures();
     } else {
         // If hasAccess is NOT granted (because validateUserAccess returned false),
         // validateUserAccess has already handled displaying either the
@@ -466,7 +476,7 @@ async function validateUserAccess() {
         // If email not found in backend (e.g., deleted from sheet)
         if (result.validEmail === false) {
             console.log('Registered email not found in backend database. Forcing re-registration.');
-            appState.user = { email: null, accessToken: null, isAuthorized: null }; // Clear invalid local data
+            appState.user = { email: null, accessToken: null, isAuthorized: null, isAdmin: false }; // Clear invalid local data
             saveUserData();
             if (emailContainer) {
                 emailContainer.style.display = 'block'; // Show registration form
@@ -477,6 +487,8 @@ async function validateUserAccess() {
 
         // Update appState with the authorization status from backend
         appState.user.isAuthorized = result.hasAccess === true;
+        // NEW: Store admin status from backend
+        appState.user.isAdmin = result.isAdmin === true;
         saveUserData(); // Persist the updated authorization status
 
         // If backend explicitly denied access (email found, but token/status incorrect)
@@ -525,7 +537,8 @@ function showAccessDenied() {
                 appState.user = {
                     email: null,
                     accessToken: null,
-                    isAuthorized: null
+                    isAuthorized: null,
+                    isAdmin: false
                 };
                 saveUserData();
                 window.location.reload(); // Reload the page to restart the access flow
@@ -1301,4 +1314,678 @@ function getDirections(address) {
     // window.open with _blank works in all desktop browsers
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
   }
+}
+
+// ============================================================================
+// ADMIN FUNCTIONALITY - ADDED FOR ADMIN FEATURES
+// ============================================================================
+
+/**
+ * NEW: Initialize admin features based on user status
+ * Called after successful login/validation
+ */
+function initializeAdminFeatures() {
+  const adminLink = document.getElementById('adminLink');
+  const installLink = document.getElementById('installLink');
+  
+  // Only show admin link if app is installed AND user is admin
+  if (isAppInstalled() && appState.user.isAdmin) {
+    console.log('User is admin and app is installed - showing admin link');
+    if (adminLink) {
+      adminLink.classList.remove('hidden');
+    }
+    // Hide install link since app is installed
+    if (installLink) {
+      installLink.classList.add('hidden');
+    }
+    
+    // Initialize the admin modal
+    initializeAdminModal();
+  } else {
+    console.log(`Admin link not shown. Installed: ${isAppInstalled()}, isAdmin: ${appState.user.isAdmin}`);
+    if (adminLink) {
+      adminLink.classList.add('hidden');
+    }
+  }
+}
+
+/**
+ * NEW: Initialize admin modal and all its event listeners
+ */
+function initializeAdminModal() {
+  const adminLink = document.getElementById('adminLink');
+  const adminModal = document.getElementById('adminModal');
+  const closeAdminModal = document.getElementById('closeAdminModal');
+  
+  if (!adminModal) {
+    console.log('Admin modal not found in DOM');
+    return;
+  }
+  
+  // Open admin modal
+  if (adminLink) {
+    adminLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (adminModal) {
+        adminModal.style.display = 'flex';
+        showAdminMenu(); // Always start at menu
+      }
+    });
+  }
+  
+  // Close admin modal
+  if (closeAdminModal) {
+    closeAdminModal.addEventListener('click', function() {
+      if (adminModal) {
+        adminModal.style.display = 'none';
+      }
+    });
+  }
+  
+  // Close modal when clicking outside
+  if (adminModal) {
+    window.addEventListener('click', function(e) {
+      if (e.target === adminModal) {
+        adminModal.style.display = 'none';
+      }
+    });
+  }
+  
+  // Menu navigation buttons
+  const showAddBtn = document.getElementById('showAddLocationBtn');
+  const showDeleteBtn = document.getElementById('showDeleteRequestBtn');
+  const backFromAddBtn = document.getElementById('backFromAddBtn');
+  const backFromDeleteBtn = document.getElementById('backFromDeleteBtn');
+  
+  if (showAddBtn) {
+    showAddBtn.addEventListener('click', showAddLocationScreen);
+  }
+  
+  if (showDeleteBtn) {
+    showDeleteBtn.addEventListener('click', showDeleteRequestScreen);
+  }
+  
+  if (backFromAddBtn) {
+    backFromAddBtn.addEventListener('click', showAdminMenu);
+  }
+  
+  if (backFromDeleteBtn) {
+    backFromDeleteBtn.addEventListener('click', showAdminMenu);
+  }
+  
+  // Initialize the forms
+  initializeAddLocationForm();
+  initializeDeleteRequestForm();
+}
+
+/**
+ * NEW: Show the admin menu screen
+ */
+function showAdminMenu() {
+  document.getElementById('adminMenuScreen').classList.remove('hidden');
+  document.getElementById('addLocationScreen').classList.add('hidden');
+  document.getElementById('deleteRequestScreen').classList.add('hidden');
+  document.getElementById('adminModalTitle').textContent = 'Admin Panel';
+  appState.admin.currentScreen = 'menu';
+}
+
+/**
+ * NEW: Show the add location screen
+ */
+function showAddLocationScreen() {
+  document.getElementById('adminMenuScreen').classList.add('hidden');
+  document.getElementById('addLocationScreen').classList.remove('hidden');
+  document.getElementById('deleteRequestScreen').classList.add('hidden');
+  document.getElementById('adminModalTitle').textContent = 'Add New Location';
+  appState.admin.currentScreen = 'add';
+}
+
+/**
+ * NEW: Show the delete request screen
+ */
+function showDeleteRequestScreen() {
+  document.getElementById('adminMenuScreen').classList.add('hidden');
+  document.getElementById('addLocationScreen').classList.add('hidden');
+  document.getElementById('deleteRequestScreen').classList.remove('hidden');
+  document.getElementById('adminModalTitle').textContent = 'Request Deletion';
+  appState.admin.currentScreen = 'delete';
+}
+
+/**
+ * NEW: Initialize the add location form with validation and submission
+ */
+function initializeAddLocationForm() {
+  const form = document.getElementById('addLocationForm');
+  
+  if (!form) return;
+  
+  // Set up real-time validation for specific fields
+  setupFieldValidation();
+  
+  // Handle form submission
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Validate the form
+    const validation = validateAddLocationForm();
+    
+    if (!validation.isValid) {
+      showAddLocationMessage(validation.errors.join(' '), 'error');
+      return;
+    }
+    
+    // Check for duplicates
+    const duplicateCheck = checkForDuplicates(validation.data);
+    
+    if (!duplicateCheck.isValid) {
+      showAddLocationMessage(duplicateCheck.error, 'error');
+      return;
+    }
+    
+    // Submit the location
+    await submitAddLocation(validation.data);
+  });
+}
+
+/**
+ * NEW: Set up real-time validation for State, Zip, and Phone fields
+ */
+function setupFieldValidation() {
+  const stateInput = document.getElementById('adminState');
+  const zipInput = document.getElementById('adminZip');
+  const phoneInput = document.getElementById('adminPhone');
+  
+  if (stateInput) {
+    stateInput.addEventListener('input', validateStateField);
+  }
+  
+  if (zipInput) {
+    zipInput.addEventListener('input', validateZipField);
+  }
+  
+  if (phoneInput) {
+    phoneInput.addEventListener('input', validatePhoneField);
+  }
+}
+
+/**
+ * NEW: Validate state field (must be exactly 2 letters)
+ */
+function validateStateField() {
+  const stateInput = document.getElementById('adminState');
+  const value = stateInput.value.trim().toUpperCase();
+  
+  // Convert to uppercase automatically
+  stateInput.value = value;
+  
+  if (value.length === 0) {
+    // Empty - neutral state
+    stateInput.classList.remove('valid', 'invalid');
+  } else if (value.length === 2 && /^[A-Z]{2}$/.test(value)) {
+    // Valid - exactly 2 letters
+    stateInput.classList.remove('invalid');
+    stateInput.classList.add('valid');
+  } else {
+    // Invalid
+    stateInput.classList.remove('valid');
+    stateInput.classList.add('invalid');
+  }
+}
+
+/**
+ * NEW: Validate zip field (must have at least 5 digits)
+ */
+function validateZipField() {
+  const zipInput = document.getElementById('adminZip');
+  const value = zipInput.value.trim();
+  
+  // Count digits only
+  const digits = value.replace(/\D/g, '');
+  
+  if (value.length === 0) {
+    // Empty - neutral state
+    zipInput.classList.remove('valid', 'invalid');
+  } else if (digits.length >= 5) {
+    // Valid - at least 5 digits
+    zipInput.classList.remove('invalid');
+    zipInput.classList.add('valid');
+  } else {
+    // Invalid
+    zipInput.classList.remove('valid');
+    zipInput.classList.add('invalid');
+  }
+}
+
+/**
+ * NEW: Validate phone field (if entered, must be 10 digits)
+ */
+function validatePhoneField() {
+  const phoneInput = document.getElementById('adminPhone');
+  const value = phoneInput.value.trim();
+  
+  // Count digits only
+  const digits = value.replace(/\D/g, '');
+  
+  if (value.length === 0) {
+    // Empty is OK (optional field) - neutral state
+    phoneInput.classList.remove('valid', 'invalid');
+  } else if (digits.length === 10) {
+    // Valid - exactly 10 digits
+    phoneInput.classList.remove('invalid');
+    phoneInput.classList.add('valid');
+  } else {
+    // Invalid
+    phoneInput.classList.remove('valid');
+    phoneInput.classList.add('invalid');
+  }
+}
+
+/**
+ * NEW: Validate the entire add location form
+ * @returns {Object} - { isValid: boolean, errors: array, data: object }
+ */
+function validateAddLocationForm() {
+  const errors = [];
+  const data = {};
+  
+  // Get all field values
+  const siteId = document.getElementById('adminSiteId').value.trim();
+  const facilityCode = document.getElementById('adminFacilityCode').value.trim();
+  const street = document.getElementById('adminStreet').value.trim();
+  const city = document.getElementById('adminCity').value.trim();
+  const state = document.getElementById('adminState').value.trim().toUpperCase();
+  const zip = document.getElementById('adminZip').value.trim();
+  const phone = document.getElementById('adminPhone').value.trim();
+  
+  // Validate required fields
+  if (!siteId) {
+    errors.push('Site ID is required.');
+    document.getElementById('adminSiteId').classList.add('invalid');
+  } else {
+    document.getElementById('adminSiteId').classList.remove('invalid');
+    data.siteId = siteId;
+  }
+  
+  if (!facilityCode) {
+    errors.push('Facility Code is required.');
+    document.getElementById('adminFacilityCode').classList.add('invalid');
+  } else {
+    document.getElementById('adminFacilityCode').classList.remove('invalid');
+    data.facilityCode = facilityCode;
+  }
+  
+  if (!street) {
+    errors.push('Street Address is required.');
+    document.getElementById('adminStreet').classList.add('invalid');
+  } else {
+    document.getElementById('adminStreet').classList.remove('invalid');
+    data.street = street;
+  }
+  
+  if (!city) {
+    errors.push('City is required.');
+    document.getElementById('adminCity').classList.add('invalid');
+  } else {
+    document.getElementById('adminCity').classList.remove('invalid');
+    data.city = city;
+  }
+  
+  // Validate state (exactly 2 letters)
+  if (!state || !/^[A-Z]{2}$/.test(state)) {
+    errors.push('State must be exactly 2 letters.');
+    document.getElementById('adminState').classList.add('invalid');
+  } else {
+    document.getElementById('adminState').classList.remove('invalid');
+    data.state = state;
+  }
+  
+  // Validate zip (at least 5 digits)
+  const zipDigits = zip.replace(/\D/g, '');
+  if (!zip || zipDigits.length < 5) {
+    errors.push('Zip Code must contain at least 5 digits.');
+    document.getElementById('adminZip').classList.add('invalid');
+  } else {
+    document.getElementById('adminZip').classList.remove('invalid');
+    data.zip = zip;
+  }
+  
+  // Validate phone (optional, but if provided must be 10 digits)
+  if (phone) {
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      errors.push('Phone must be 10 digits (area code + number).');
+      document.getElementById('adminPhone').classList.add('invalid');
+    } else {
+      document.getElementById('adminPhone').classList.remove('invalid');
+      // Format phone number
+      data.phone = formatPhoneNumber(phoneDigits);
+    }
+  } else {
+    document.getElementById('adminPhone').classList.remove('invalid');
+    data.phone = ''; // Empty phone is OK
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors: errors,
+    data: data
+  };
+}
+
+/**
+ * NEW: Check if Site ID or Facility Code already exists
+ * @param {Object} data - The location data to check
+ * @returns {Object} - { isValid: boolean, error: string }
+ */
+function checkForDuplicates(data) {
+  const autocompleteData = appState.search.autocompleteData;
+  
+  // Check Site ID
+  if (autocompleteData.includes(data.siteId)) {
+    document.getElementById('adminSiteId').classList.add('invalid');
+    return {
+      isValid: false,
+      error: `Site ID "${data.siteId}" already exists in the database.`
+    };
+  }
+  
+  // Check Facility Code
+  if (autocompleteData.includes(data.facilityCode)) {
+    document.getElementById('adminFacilityCode').classList.add('invalid');
+    return {
+      isValid: false,
+      error: `Facility Code "${data.facilityCode}" already exists in the database.`
+    };
+  }
+  
+  return { isValid: true };
+}
+
+/**
+ * NEW: Format phone number as 1-XXX-XXX-XXXX
+ * @param {string} digits - 10-digit phone number
+ * @returns {string} - Formatted phone number
+ */
+function formatPhoneNumber(digits) {
+  // Assumes digits is exactly 10 characters
+  return `1-${digits.substring(0,3)}-${digits.substring(3,6)}-${digits.substring(6,10)}`;
+}
+
+/**
+ * NEW: Submit add location request to API
+ * @param {Object} data - The location data to submit
+ */
+async function submitAddLocation(data) {
+  try {
+    showAddLocationMessage('Adding location...', 'info');
+    
+    // Build query string
+    const params = new URLSearchParams({
+      action: 'addLocation',
+      siteId: data.siteId,
+      facilityCode: data.facilityCode,
+      street: data.street,
+      city: data.city,
+      state: data.state,
+      zip: data.zip,
+      phone: data.phone
+    });
+    
+    const response = await fetch(`${CONFIG.apiUrl}?${params.toString()}`, {
+      method: 'GET'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Network error');
+    }
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showAddLocationMessage('Location added successfully!', 'success');
+      
+      // Add to local autocomplete data immediately
+      if (!appState.search.autocompleteData.includes(data.siteId)) {
+        appState.search.autocompleteData.push(data.siteId);
+      }
+      if (!appState.search.autocompleteData.includes(data.facilityCode)) {
+        appState.search.autocompleteData.push(data.facilityCode);
+      }
+      
+      // Clear the form
+      clearAddLocationForm();
+      
+      // Reload autocomplete data in background
+      setTimeout(() => loadAutocompleteData(), 2000);
+    } else {
+      throw new Error(result.error || 'Failed to add location');
+    }
+    
+  } catch (error) {
+    console.error('Add location error:', error);
+    showAddLocationMessage(`Error: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * NEW: Show message in add location form
+ * @param {string} message - The message to show
+ * @param {string} type - 'success', 'error', or 'info'
+ */
+function showAddLocationMessage(message, type) {
+  const messageDiv = document.getElementById('addLocationMessage');
+  if (messageDiv) {
+    messageDiv.textContent = message;
+    messageDiv.classList.remove('hidden', 'success', 'error', 'info');
+    messageDiv.classList.add(type);
+    
+    // Auto-hide success messages after 3 seconds
+    if (type === 'success') {
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 3000);
+    }
+  }
+}
+
+/**
+ * NEW: Clear the add location form
+ */
+function clearAddLocationForm() {
+  document.getElementById('adminSiteId').value = '';
+  document.getElementById('adminFacilityCode').value = '';
+  document.getElementById('adminStreet').value = '';
+  document.getElementById('adminCity').value = '';
+  document.getElementById('adminState').value = '';
+  document.getElementById('adminZip').value = '';
+  document.getElementById('adminPhone').value = '';
+  
+  // Remove all validation classes
+  document.querySelectorAll('#addLocationForm .admin-input').forEach(input => {
+    input.classList.remove('valid', 'invalid');
+  });
+}
+
+/**
+ * NEW: Initialize the delete request form
+ */
+function initializeDeleteRequestForm() {
+  setupDeleteAutocomplete();
+  
+  const requestBtn = document.getElementById('requestDeleteButton');
+  if (requestBtn) {
+    requestBtn.addEventListener('click', submitDeleteRequest);
+  }
+}
+
+/**
+ * NEW: Set up autocomplete for delete search
+ */
+function setupDeleteAutocomplete() {
+  const searchInput = document.getElementById('adminDeleteSearch');
+  const dropdown = document.getElementById('adminDeleteAutocomplete');
+  
+  if (!searchInput || !dropdown) return;
+  
+  // Handle input
+  searchInput.addEventListener('input', function() {
+    const query = this.value.trim().toLowerCase();
+    
+    if (!query) {
+      dropdown.style.display = 'none';
+      dropdown.innerHTML = '';
+      return;
+    }
+    
+    // Filter autocomplete items (reuse existing logic)
+    const filteredItems = filterAutocompleteItems(query);
+    
+    if (filteredItems.length === 0) {
+      dropdown.style.display = 'none';
+      dropdown.innerHTML = '';
+      return;
+    }
+    
+    // Update dropdown
+    dropdown.innerHTML = '';
+    filteredItems.forEach(item => {
+      const div = document.createElement('div');
+      div.textContent = item;
+      div.className = 'autocomplete-item';
+      
+      div.addEventListener('click', function() {
+        searchInput.value = item;
+        dropdown.style.display = 'none';
+        selectLocationForDeletion(item);
+      });
+      
+      dropdown.appendChild(div);
+    });
+    
+    dropdown.style.display = 'block';
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (e.target !== searchInput && e.target !== dropdown) {
+      dropdown.style.display = 'none';
+    }
+  });
+}
+
+/**
+ * NEW: Select a location for deletion (fetch and show details)
+ * @param {string} query - The Site ID or Facility Code
+ */
+async function selectLocationForDeletion(query) {
+  try {
+    // Fetch location details
+    const response = await fetch(`${CONFIG.apiUrl}?action=searchLocation&query=${encodeURIComponent(query)}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch location details');
+    }
+    
+    const result = await response.json();
+    
+    if (result.error) {
+      throw new Error(result.error);
+    }
+    
+    // Store the selected location
+    appState.admin.selectedLocation = result;
+    
+    // Show preview
+    document.getElementById('previewSiteId').textContent = result.siteId;
+    document.getElementById('previewFacilityCode').textContent = result.facilityCode;
+    document.getElementById('previewAddress').textContent = `${result.street}, ${result.city}, ${result.state} ${result.zip}`;
+    document.getElementById('previewPhone').textContent = result.phone;
+    
+    document.getElementById('adminDeletePreview').classList.remove('hidden');
+    
+  } catch (error) {
+    console.error('Error selecting location:', error);
+    showDeleteMessage(`Error: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * NEW: Submit delete request to API (sends email)
+ */
+async function submitDeleteRequest() {
+  try {
+    const location = appState.admin.selectedLocation;
+    
+    if (!location) {
+      showDeleteMessage('Please select a location first.', 'error');
+      return;
+    }
+    
+    const reason = document.getElementById('deleteReason').value.trim();
+    
+    showDeleteMessage('Submitting deletion request...', 'info');
+    
+    const params = new URLSearchParams({
+      action: 'requestDeleteLocation',
+      siteId: location.siteId,
+      facilityCode: location.facilityCode,
+      address: `${location.street}, ${location.city}, ${location.state} ${location.zip}`,
+      phone: location.phone,
+      adminEmail: appState.user.email,
+      reason: reason || 'No reason provided'
+    });
+    
+    const response = await fetch(`${CONFIG.apiUrl}?${params.toString()}`, {
+      method: 'GET'
+    });
+    
+    if (!response.ok) {
+      throw new Error('Network error');
+    }
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showDeleteMessage('Deletion request submitted successfully! An email has been sent.', 'success');
+      clearDeleteForm();
+    } else {
+      throw new Error(result.error || 'Failed to submit deletion request');
+    }
+    
+  } catch (error) {
+    console.error('Delete request error:', error);
+    showDeleteMessage(`Error: ${error.message}`, 'error');
+  }
+}
+
+/**
+ * NEW: Show message in delete request form
+ * @param {string} message - The message to show
+ * @param {string} type - 'success', 'error', or 'info'
+ */
+function showDeleteMessage(message, type) {
+  const messageDiv = document.getElementById('deleteRequestMessage');
+  if (messageDiv) {
+    messageDiv.textContent = message;
+    messageDiv.classList.remove('hidden', 'success', 'error', 'info');
+    messageDiv.classList.add(type);
+    
+    // Auto-hide success messages after 5 seconds
+    if (type === 'success') {
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 5000);
+    }
+  }
+}
+
+/**
+ * NEW: Clear the delete request form
+ */
+function clearDeleteForm() {
+  document.getElementById('adminDeleteSearch').value = '';
+  document.getElementById('deleteReason').value = '';
+  document.getElementById('adminDeletePreview').classList.add('hidden');
+  document.getElementById('adminDeleteAutocomplete').style.display = 'none';
+  appState.admin.selectedLocation = null;
 }
