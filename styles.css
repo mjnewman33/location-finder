@@ -942,3 +942,6 @@ body {
     background-color: var(--kroger-light-blue);
   }
 }
+#helpModal .modal-body hr + p {
+    margin-top: 15px !important;
+}
