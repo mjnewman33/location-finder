@@ -9,7 +9,7 @@ const CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbxOuM-BCQqM0uBSgsSvZt7Ky2H57YOyVT0Gz3O5-tolE7e38ypBaT71GOlMvV3-qLCTDg/exec',
   // Use direct image URLs
   images: {
-    headerLogo: 'https://lh3.googleusercontent.com/d/1lAI-LC-RXSJPhMyFOYok8bxYRvBit_ye',
+    headerLogo: 'https://lh3.googleusercontent.com/d/1AJCu8ZSJZL7wPAIAEEHQ4q90ctDygBTw',
     companyLogo: 'https://lh3.googleusercontent.com/d/1zngYUKdx-lfZ8iNiKg3DvEc_LiO1eIhk',
     backgroundImage: 'https://lh3.googleusercontent.com/d/1olAGhmPRmlcetHxPZu6HQkD2Cg877XGe'
   }
