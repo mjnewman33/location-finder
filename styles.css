@@ -34,13 +34,7 @@ body {
   font-size: calc(16px + 0.4vmin); /* Slightly reduced base font size */
 }
 
-/* --- NEW CSS RULES FOR INITIAL HIDING --- */
-/* These ensure that main content, registration, and access denied sections */
-/* are hidden by default until JavaScript determines what to show. */
-/* #main-container {
-    display: none; // <--- REMOVE OR COMMENT OUT THIS LINE
-} */
-
+/* Initial hiding rules */
 #emailRegistrationContainer {
     display: none;
 }
@@ -48,8 +42,6 @@ body {
 #accessDeniedContainer {
     display: none;
 }
-/* --- END NEW CSS RULES --- */
-
 
 /* Header with dynamic sizing */
 .header {
@@ -62,8 +54,8 @@ body {
   background-color: white;
   border-bottom: 2px solid var(--kroger-blue);
   padding: 0 1vh;
-  z-index: 20; /* Increased to ensure it appears above autocomplete */
-  flex-shrink: 0; /* Prevent header from shrinking */
+  z-index: 20;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -74,11 +66,11 @@ body {
 
 /* Main content area with flex grow */
 .container {
-  flex: 1; /* Take up all remaining space */
+  flex: 1;
   width: 100%;
-  max-width: 100%; /* Allow full width on mobile */
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2vh 4vw; /* Increased horizontal padding for better spacing */
+  padding: 2vh 4vw;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -98,14 +90,14 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  flex: 1; /* Take up all available space in container */
+  flex: 1;
 }
 
 /* Search form with viewport units */
 .search-container {
   margin-bottom: 2vh;
   width: 100%;
-  position: relative; /* Required for absolute positioning of autocomplete dropdown */
+  position: relative;
 }
 
 .search-input {
@@ -162,10 +154,10 @@ body {
   border-top: none;
   border-radius: 0 0 5px 5px;
   box-shadow: var(--shadow-medium);
-  z-index: 15; /* Lower than header and footer but above content */
-  margin-top: -1px; /* Connect with input field */
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: var(--kroger-blue) #f0f0f0; /* Firefox */
+  z-index: 15;
+  margin-top: -1px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--kroger-blue) #f0f0f0;
   animation: fadeIn 0.2s ease-out;
 }
 
@@ -253,7 +245,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow-y: auto; /* Allow scrolling inside the results if needed */
+  overflow-y: auto;
 }
 
 .result-container h2 {
@@ -319,13 +311,13 @@ body {
   justify-content: center;
   align-items: center;
   position: relative;
-  z-index: 20; /* Same as header to ensure consistency */
+  z-index: 20;
   overflow: hidden;
-  flex-shrink: 0; /* Prevent footer from shrinking */
+  flex-shrink: 0;
 }
 
 /* Target only the logo container */
-.footer a:not(.help-link):not(.install-link) {
+.footer a:not(.help-link):not(.install-link):not(.admin-link) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -372,6 +364,26 @@ body {
   width: auto;
   max-width: none;
   height: auto;
+}
+
+/* NEW: Admin link in footer (bottom right) */
+.admin-link {
+  position: absolute;
+  right: 15px;
+  bottom: 25px;
+  color: rgba(255,255,255,0.7);
+  font-size: calc(14px + 0.2vmin);
+  font-weight: bold;
+  text-decoration: none;
+  line-height: 1;
+  display: inline;
+  width: auto;
+  max-width: none;
+  height: auto;
+}
+
+.admin-link:hover {
+  color: rgba(255,255,255,1);
 }
 
 /* Modal for help with viewport units */
@@ -646,6 +658,258 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ============================================================================
+   ADMIN FEATURES STYLING
+   ============================================================================ */
+
+/* Admin modal screens */
+.admin-screen {
+  transition: all 0.3s ease;
+}
+
+.admin-screen.hidden {
+  display: none;
+}
+
+/* Menu buttons (main admin screen) */
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.menu-button {
+  width: 100%;
+  padding: 20px;
+  background-color: var(--kroger-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+  box-shadow: var(--shadow-light);
+}
+
+.menu-button:hover {
+  background-color: #004a8c;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.menu-button.delete-menu-button {
+  background-color: var(--kroger-red);
+}
+
+.menu-button.delete-menu-button:hover {
+  background-color: #d93539;
+}
+
+/* Back button */
+.back-button {
+  background-color: #6c757d;
+  margin-bottom: 15px;
+}
+
+.back-button:hover {
+  background-color: #5a6268;
+}
+
+/* Form styling */
+.admin-form {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: var(--text-dark);
+  font-size: 14px;
+}
+
+.form-group .required {
+  color: var(--kroger-red);
+}
+
+.field-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* Input and textarea styling */
+.admin-input,
+.admin-textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 2px solid var(--kroger-blue);
+  border-radius: 5px;
+  outline: none;
+  transition: all var(--transition-speed);
+  font-family: Arial, sans-serif;
+}
+
+.admin-input:focus,
+.admin-textarea:focus {
+  border-color: var(--kroger-red);
+  box-shadow: 0 0 5px rgba(239, 62, 66, 0.3);
+}
+
+.admin-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Validation states */
+.admin-input.valid,
+.admin-textarea.valid {
+  border-color: var(--kroger-blue);
+  background-color: white;
+}
+
+.admin-input.invalid,
+.admin-textarea.invalid {
+  border-color: #c62828;
+  background-color: #fdecea;
+}
+
+/* Button styling */
+.admin-button {
+  width: 100%;
+  padding: 12px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.submit-button {
+  background-color: var(--kroger-blue);
+}
+
+.submit-button:hover {
+  background-color: #004a8c;
+}
+
+.delete-request-button {
+  background-color: var(--kroger-red);
+  margin-top: 10px;
+}
+
+.delete-request-button:hover {
+  background-color: #d93539;
+}
+
+/* Message styling */
+.admin-message {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+  transition: all var(--transition-speed);
+}
+
+.admin-message.hidden {
+  display: none;
+}
+
+.admin-message.success {
+  background-color: #e6f7e6;
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+}
+
+.admin-message.error {
+  background-color: #fdecea;
+  color: #c62828;
+  border: 1px solid #c62828;
+}
+
+.admin-message.info {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #1565c0;
+}
+
+/* Delete section styling */
+.admin-delete-section {
+  margin-top: 20px;
+  position: relative;
+}
+
+.delete-preview {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: var(--kroger-light-blue);
+  border-radius: 5px;
+  border: 1px solid var(--kroger-blue);
+}
+
+.delete-preview.hidden {
+  display: none;
+}
+
+.delete-preview h4 {
+  margin: 0 0 10px 0;
+  color: var(--kroger-blue);
+  font-size: 16px;
+}
+
+.preview-info {
+  margin: 10px 0;
+  line-height: 1.8;
+  color: var(--text-dark);
+}
+
+.preview-info strong {
+  color: var(--kroger-blue);
+}
+
+/* Responsive adjustments for admin features */
+@media (max-width: 768px) {
+  .menu-button {
+    font-size: 16px;
+    padding: 18px;
+  }
+  
+  .admin-button {
+    font-size: 15px;
+  }
+}
+
+@media (max-height: 500px) {
+  .menu-buttons {
+    gap: 15px;
+    padding: 15px 0;
+  }
+  
+  .menu-button {
+    padding: 15px;
+  }
+  
+  .form-group {
+    margin-bottom: 12px;
+  }
+  
+  .help-link, .install-link, .admin-link {
+    bottom: 12px;
+  }
+}
+
 /* Ensure proper sizing on larger screens */
 @media (min-width: 768px) {
   body {
@@ -663,30 +927,6 @@ body {
   /* Improve autocomplete on larger screens */
   .autocomplete-item {
     padding: 12px 15px;
-  }
-}
-
-/* Ensure proper sizing on very small screens */
-@media (max-height: 500px) {
-  .header {
-    height: 50px;
-  }
-  
-  .footer {
-    height: 40px;
-  }
-  
-  .search-input, .search-button, .directions-button {
-    height: 40px;
-  }
-  
-  .help-link, .install-link {
-    bottom: 12px;
-  }
-
-  /* Limit autocomplete dropdown height on small screens */
-  .autocomplete-dropdown {
-    max-height: 180px;
   }
 }
 
